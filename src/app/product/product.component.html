@@ -1,0 +1,109 @@
+<div class="container mt-5">
+    <h1 class="text-center">Product Detail</h1>
+  
+    <!--
+    <div class="form-group">
+      <input [(ngModel)]="userName" placeholder="Product Name" class="form-control" />
+      <button (click)="createItem()" class="btn btn-primary mt-2">Add Product</button>
+    </div> -->
+  
+  <!-- Modal -->
+  <app-navbar></app-navbar>
+  <!-- Add or Edit Product Button -->
+  <button type="button" class="btn btn-info btn-lg" (click)="openModal()">Add Product</button>
+  
+  <!-- Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true" #productModal>
+  
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">{{ productId ? 'Edit Product' : 'Add New Product' }}</h5>
+          <button type="button" class="close" (click)="closeModal()" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+              <label for="productName">Product Name</label>
+              <input type="text" class="form-control" formControlName="name" placeholder="Enter Product Name">
+            </div>
+            <div class="form-group">
+              <label for="price">Product Price</label>
+              <input type="text" class="form-control" formControlName="price" placeholder="Enter Product Price">
+            </div>
+            <div class="form-group">
+              <label for="quantity">Product Quantity</label>
+              <input type="number" class="form-control" formControlName="quantity" placeholder="Enter Quantity">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+              <button type="submit" class="btn btn-primary" >{{ productId ? 'Update Product' : 'Save Product' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+
+  <button type="submit" class="btn btn-info btn-lg" (click)="onLogout()">Logout</button>
+  
+    <!-- Users Table -->
+    <div class="table-container">
+      <mat-toolbar color="primary">
+        <span>Product List</span>
+        <span class="spacer"></span>
+        <mat-form-field appearance="outline">
+          <mat-label>Search</mat-label>
+          <input matInput (keyup)="applyFilter($event)" placeholder="Search products">
+        </mat-form-field>
+      </mat-toolbar>
+    
+      <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
+         <!-- Table Header & Row Definition -->
+         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+       <ng-container matColumnDef="Slno">
+          <th mat-header-cell *matHeaderCellDef> # </th>
+          <td mat-cell *matCellDef="let element; let i = index"> {{ i + 1 }} </td>
+        </ng-container>
+    
+       <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Product Name </th>
+          <td mat-cell *matCellDef="let element"> {{ element.name }} </td>
+        </ng-container>
+    
+        <ng-container matColumnDef="productPrice">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Product Price </th>
+          <td mat-cell *matCellDef="let element"> {{ element.price }} </td>
+        </ng-container>
+    
+       <ng-container matColumnDef="quantity">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Product Quantity </th>
+          <td mat-cell *matCellDef="let element"> {{ element.quantity }} </td>
+        </ng-container>
+    
+       <ng-container matColumnDef="Action">
+          <th mat-header-cell *matHeaderCellDef class="text-center"> Actions </th>
+          <td mat-cell *matCellDef="let element" class="text-center">
+            <button mat-button color="warn" (click)="openModal(element._id)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-button color="accent" (click)="deleteItem(element._id)">
+              <mat-icon>delete</mat-icon> 
+            </button>
+          </td>
+        </ng-container>
+    
+       
+      </table>
+    
+      <!-- Pagination -->
+    <mat-paginator [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" showFirstLastButtons></mat-paginator>
+      
+    </div>
+       
+  </div>
+  

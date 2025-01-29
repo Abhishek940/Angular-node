@@ -1,4 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { UserServiceService } from './servics/user-service.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+declare var bootstrap: any;
+import { Modal } from 'bootstrap';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-root',
@@ -7,5 +12,4 @@ import { Component } from '@angular/core';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'angular-frontend';
 }
