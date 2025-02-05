@@ -56,7 +56,7 @@ export class ProductComponent {
       name: ['', [Validators.required]],
       price: ['', [Validators.required]],
       quantity: ['', [Validators.required]],
-      image:['',[Validators.required]],
+      image:[''],
     });
   }
 
