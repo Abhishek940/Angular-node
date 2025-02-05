@@ -21,6 +21,7 @@ export class ProductComponent {
   items: any;
   users: any;
   userName = '';
+  selectedFile='';
   productId: string | null = null;
   productForm!: FormGroup;
   productImage: string | null = null;  // To hold existing image URL (for update)
@@ -150,23 +151,8 @@ export class ProductComponent {
     this.productForm.reset(); // Reset the form
   }
 
-  /* onFileChange(event: any): void {
-    const reader = new FileReader();
-    if(event.target.files && event.target.files.length) {
-      const [file] = event.target.files;
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-      this.imageSrc = reader.result as string;
-        this.productForm.patchValue({
-          file: reader.result as string
-        });
-     
-      };
    
-    }
-  } */
-  
-    onFileChange(event: any): void {
+     /* onFileChange(event: any): void {
       const reader = new FileReader();
       if (event.target.files && event.target.files.length) {
         const [file] = event.target.files;
@@ -178,11 +164,64 @@ export class ProductComponent {
           });
         };
       }
-    }
+    }  */
+
+      // Handle file input change event
+   
+      onFileChange(event: any): void {
+        const file = event.target.files[0];
+      
+        // Check if file is provided
+        if (file) {
+          // Check file type (only images are allowed)
+          const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      
+          // If file is not an image (video or any non-image type), show an error for invalid file type
+          if (!allowedImageTypes.includes(file.type)) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error...',
+              text: 'Only jpg, jpeg, and png images are allowed.',
+              confirmButtonText: 'Ok'
+            });
+            this.selectedFile = '';  // Clear the selected file
+            this.imageSrc = null; // Clear the preview
+            return;
+          }
+      
+          // If file is an image, check the file size (1MB)
+          if (file.size > 1048576) { // 1MB = 1048576 bytes
+            Swal.fire({
+              icon: 'error',
+              title: 'Error...',
+              text: 'File size should not exceed 1 MB.',
+              confirmButtonText: 'Ok'
+            });
+            this.selectedFile = '';  // Clear the selected file
+            this.imageSrc = null; // Clear the preview
+            return;
+          }
+      
+          // If both file type and size are valid, store the file
+          this.selectedFile = file;
+      
+          // Reading the file as Data URL for preview
+          const reader = new FileReader();
+          reader.readAsDataURL(file);  // Read the file as a data URL
+      
+          reader.onload = () => {
+            this.imageSrc = reader.result;  // Set the image preview source
+          };
+      
+          reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+          };
+        }
+      }
+      
   
   onSubmit(): void {
-   // this.closeModal();
-
+  
     if (this.productForm.invalid) {
       console.log('Form Invalid:', this.productForm.invalid);
       if (this.productForm.get('name')?.invalid) {
