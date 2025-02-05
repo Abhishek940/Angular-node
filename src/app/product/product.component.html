@@ -37,6 +37,11 @@
               <label for="quantity">Product Quantity</label>
               <input type="number" class="form-control" formControlName="quantity" placeholder="Enter Quantity">
             </div>
+            <div class="form-group">
+              <label for ="image">Upload Image</label>
+              <input type="file" class="form-control" formControlName="image" (change)="onFileChange($event)" id="imageInput">
+              <img [src]="imageSrc" *ngIf="imageSrc" style="height: 200px; width:200px" class="form-control">
+             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
               <button type="submit" class="btn btn-primary" >{{ productId ? 'Update Product' : 'Save Product' }}</button>
@@ -68,6 +73,14 @@
        <ng-container matColumnDef="Slno">
           <th mat-header-cell *matHeaderCellDef> # </th>
           <td mat-cell *matCellDef="let element; let i = index"> {{ i + 1 }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="image">
+          <th mat-header-cell *matHeaderCellDef> Image </th>
+          <td mat-cell *matCellDef="let element"> 
+            <img [src]="getImageUrl(element?.image)" alt="Product Image" style="max-width: 80px; max-height: 80px">
+
+        </td>
         </ng-container>
     
        <ng-container matColumnDef="productName">
