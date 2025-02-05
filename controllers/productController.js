@@ -137,7 +137,7 @@ const upload = multer({
     // Set up storage options for multer
    // Your add product function
 const add = async (req, res) => {
-    // Handle file upload first
+    // Handle file upload 
     upload(req, res, async (err) => {
       if (err) {
         return res.status(400).json({
