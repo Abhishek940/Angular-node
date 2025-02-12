@@ -4,12 +4,16 @@ import { LoginComponent } from './login/login.component';
 import { ProductComponent } from './product/product.component';
 import {RegistrationComponent} from './registration/registration.component'
 import { AuthGuard } from './auth.guard';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import {ResetPasswordComponent} from './reset-password/reset-password.component';
 const routes: Routes = [
 
   { path: '', component: LoginComponent },
   { path:'register',component:RegistrationComponent},
+  { path:'forgot/password',component:ForgotPasswordComponent},
+  { path:'reset-password/:resetToken',component:ResetPasswordComponent},
   { path: 'product', component: ProductComponent,canActivate:[AuthGuard] },
- 
+
   
 ];
 

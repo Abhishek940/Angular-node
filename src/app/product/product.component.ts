@@ -190,7 +190,7 @@ export class ProductComponent {
           }
       
           // If file is an image, check the file size (1MB)
-          if (file.size > 1048576) { // 1MB = 1048576 bytes
+          if (file.size > 1024*1024) { // 1MB = 1048576 bytes
             Swal.fire({
               icon: 'error',
               title: 'Error...',
@@ -223,8 +223,7 @@ export class ProductComponent {
   onSubmit(): void {
   
     if (this.productForm.invalid) {
-      console.log('Form Invalid:', this.productForm.invalid);
-      if (this.productForm.get('name')?.invalid) {
+    if (this.productForm.get('name')?.invalid) {
         Swal.fire({
           icon: 'error',
           title: 'Error...',

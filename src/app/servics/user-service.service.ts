@@ -37,20 +37,29 @@ export class UserServiceService {
   }
 
   // add user
-
   addUser(user: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/addUser`, user);
   }
 
+// login
   login(userData:any){
     return this.http.post(`${this.apiUrl}/login`,userData)
   }
 
+//forgot password
+  sendPassRestMail(post:any){
+    return this.http.post<any>(`${this.apiUrl}/forgotPass`,post)
+  }
+
+//reset-pass
+resetPassword(resetToken: string, password: string): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/reset-password`, {resetToken,password
+  });
+}
+
   logout() {
-  
     localStorage.removeItem('token');  
     localStorage.removeItem('username');  
-  
   }
   
 }
