@@ -1,7 +1,11 @@
 const {User} = require('../models');
 const Joi = require('joi');
+const bcrypt = require('bcrypt');
 const mongoose = require('mongoose'); 
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
     const addUser = async (req, res) => {
         // Prepare data to be validated
         const data = {
@@ -13,7 +17,7 @@ const jwt = require('jsonwebtoken');
     
         // Joi schema validation
         const schema = Joi.object({
-            name: Joi.string().min(3).max(50).required().messages({
+            name: Joi.string().min(2).max(50).required().messages({
                 'string.base': '"name" must be a string',
                 'string.min': '"name" should have a minimum length of 3',
                 'string.max': '"name" should have a maximum length of 50',
@@ -107,10 +111,12 @@ const jwt = require('jsonwebtoken');
             if (!user) {
                 return res.status(400).json({ 
                     status: false,
-                    msg: 'Invalid credentials' });
+                    msg: 'Invalid credentialssss' });
                }
-    
-            const isMatch = await user.comparePassword(password);
+               
+             
+           const isMatch = await bcrypt.compare(password, user.password);
+            console.log('match',isMatch);
             if (!isMatch) {
                 return res.status(400).json({ 
                     status: false,
@@ -132,6 +138,7 @@ const jwt = require('jsonwebtoken');
                 name:user.name,
                 mobileNo:user.mobile,
                 email:user.email,
+                password:user.password,
                 token,
             });
         } catch (error) {
@@ -140,140 +147,168 @@ const jwt = require('jsonwebtoken');
         }
     };
     
+  // forgot password
     
+  const forgotPassword = async (req, res) => {
+    
+    const { email } = req.body;
 
-const deleteProduct = async (req, res, next) => {
     try {
-        const productId = req.params.id;
-        const deletedProduct = await Product.findByIdAndDelete(productId);
-        if (deletedProduct) {
-            return res.status(200).json({
-                 msg: 'Product deleted successfully'
-            });
+        const user = await User.findOne({ email });
 
-        } else {
-            return res.status(404).json({ 
-                msg: 'Product not found'
-            
-            });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
-    } catch (err) {
-        return res.status(500).json({
-             msg: 'Error deleting product', error: err.msg
-            
+
+        // Generate a password reset token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        
+        // Set an expiration time for the token (1 hour from now)
+       // const resetTokenExpiration = Date.now() + 3600000; // 1 hour
+       const resetTokenExpiration = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+        // Save the token and expiration in the user object
+        user.resetToken = resetToken;
+        user.resetTokenExpiration = resetTokenExpiration;
+        
+        // Save the updated user to the database
+        await user.save();  // token is saved to the database!
+        console.log("Updated user:", user);
+        // Send email with reset link
+        const transporter = nodemailer.createTransport({
+            host: 'sandbox.smtp.mailtrap.io', // Mailtrap SMTP host
+            port: 2525, 
+            auth: {
+                user: '64ee6f1dc43e63',
+                pass: 'f0f55f60fb7c5a',
+            },
+        });
+
+        const resetLink = `http://localhost:4200/reset-password/${resetToken}`;
+
+        const mailOptions = {
+            from: 'abhishek.k@csm.tech',
+            to: email,
+            subject: 'Password Reset Request',
+            html: `
+                <p>You requested a password reset. Click the link below to reset your password:</p>
+                <p><a href="${resetLink}">Reset Password</a></p>
+             `, 
+        };
+        
+        // Send the email using the transporter
+        await transporter.sendMail(mailOptions);
+        return res.status(200).json({
+             message: 'Password reset link sent' 
             });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ 
+            message: 'Failed to send email, server error' 
+        });
     }
-
 };
-  
 
-/* const getProuct = async (req, res) => {
+
+
+/* const resetPassword = async (req, res) => {
+    const { resetToken, password } = req.body;
+
     try {
-        const product = await Product.find();
-        
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
+        // Find the user with the reset token and check if it has expired
+        const user = await User.findOne({
+            resetToken,
+            resetTokenExpiration: { $gt: Date.now() }, // Check if the reset token hasn't expired
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                 message: 'Invalid or expired token'
+            });
         }
-        
-        return res.status(200).json(product);
-    } catch (err) {
-        return res.status(500).json({ message: 'Error fetching product', error: err.message });
+
+        // Hash the new password before saving it
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);  // Hash the new password
+        console.log("Hashed Password Before Saving:", hashedPassword);
+        // Set the new hashed password
+        user.password = hashedPassword;
+        console.log('userPass',user.password);
+
+        // Clear the reset token and expiration after password reset
+        user.resetToken = undefined;
+        user.resetTokenExpiration = undefined;
+
+        // Save the user with the updated password
+        await user.save();
+
+        return res.status(200).json({
+             message: 'Password has been successfully reset'
+          });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+             message: 'Server error' 
+        });
     }
 }; */
 
-const getProduct = async (req, res) => {
-    
+
+const resetPassword = async (req, res) => {
+    const { resetToken, password } = req.body;
     try {
-        const page = parseInt(req.query.page) || 1; // default page 1 
-        const limit = parseInt(req.query.limit) || 10; // default 10 items per page 
-        const skip = (page - 1) * limit; // Calculate  items to skip
+        // Find the user with the reset token and check if it has expired
+        const user = await User.findOne({
+            resetToken,
+            resetTokenExpiration: { $gt: Date.now() }, // Check if the reset token hasn't expired
+        });
 
-        // Fetch products with pagination
-        const products = await Product.find()
-                        .skip(skip)
-                        .limit(limit);
-
-        // If no products are found
-        if (!products || products.length === 0) {
-            return res.status(404).json({
-                message: 'No products found ',
-                status: 'error',
-                data: []
+        if (!user) {
+            return res.status(400).json({
+                message: 'Invalid or expired token'
             });
         }
 
-        const totalCount = await Product.countDocuments();
-        // Calculate total pages
-        const totalPages = Math.ceil(totalCount / limit);
+        // Hash the new password before saving it
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(this.password.trim(), salt);  // Hash the new password
+        console.log("Hashed Password Before Saving:", hashedPassword);
 
-        // Return products along with pagination data
+        // Set the new hashed password
+        user.password = hashedPassword;  
+
+        // Clear the reset token and expiration after password reset
+        user.resetToken = undefined;
+        user.resetTokenExpiration = undefined;
+
+        // Save the user with the updated password
+        await user.save();
+
+        // Generate a new JWT token after password reset
+        const token = jwt.sign(
+            { userId: user._id, email: user.email },
+            process.env.JWT_SECRET, // Use your secret key
+            { expiresIn: '1h' } // Set token expiration (1 hour)
+        );
+
         return res.status(200).json({
-            message: 'Products retrieved successfully',
-            status: 'Success',
-            statusCode:200,
-            data: products,
-            pagination: {
-                totalCount,
-                totalPages,
-                currentPage: page,
-                pageSize: limit
-            }
+            message: 'Password has been successfully reset',
+            token, // Send the new JWT token
         });
 
-    } catch (err) {
-         return res.status(500).json({
-            message: 'Error fetching products',
-            status: 'error',
-            error: err.message
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Server error'
         });
     }
 };
-
-
-const getProductById = async (req, res) => {
-    try {
-      const productId = req.body.id; // Get the product ID from the body
-  
-      // Ensure productId is provided
-      if (!productId) {
-        return res.status(400).json({
-          message: 'Product ID is required',
-          status: 'error',
-          data: null
-        });
-      }
-  
-      // Fetch the product by its ID from the database
-      const product = await Product.findById(productId);
-  
-      // If the product does not exist
-      if (!product) {
-        return res.status(404).json({
-          message: 'Product not found',
-          status: 'error',
-          data: null
-        });
-      }
-  
-      // Return the product details if found
-      return res.status(200).json({
-        message: 'Product retrieved successfully',
-        status: 'success',
-        data: product
-      });
-    } catch (error) {
-      return res.status(500).json({
-        message: 'Error fetching product',
-        status: 'error',
-        error: error.message
-      });
-    }
-  };
-  
 
 
 module.exports= {
     addUser,
     login,
+    forgotPassword,
+    resetPassword
     
 }

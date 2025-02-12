@@ -5,7 +5,8 @@ const Authenticate = require('../middleware/authenticateJWT');
 
 router.post('/login',userController.login);
 router.post('/addUser',userController.addUser);
-
+router.post('/forgotPass',userController.forgotPassword);
+router.post('/reset-password',userController.resetPassword);
 
 
 // Apply authentication middleware to all  routes
