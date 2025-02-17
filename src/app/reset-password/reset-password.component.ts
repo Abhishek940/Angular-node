@@ -14,7 +14,6 @@ export class ResetPasswordComponent {
   resetToken: string='';
   newPassword: string = '';
   confirmPassword: string = '';
- 
   restPasswordForm!: FormGroup;
 
   constructor(
@@ -36,13 +35,12 @@ export class ResetPasswordComponent {
 
   resepasstForm(): void {
     this.restPasswordForm = this.fb.group({
-      password:[''],
+      password:['',[Validators.minLength(6)]],
       token:[''],
       confirmPassword: ['', [Validators.required, Validators.minLength(6)]],
-        
+       
     });
-  }
-  ; 
+  }; 
   
   onSubmit(): void {
    

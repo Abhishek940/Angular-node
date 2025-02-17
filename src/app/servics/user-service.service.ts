@@ -32,7 +32,7 @@ export class UserServiceService {
   }
 
   // Delete 
-   deleteItem(id: number): Observable<any> {
+   deleteProduct(id: number): Observable<any> {
       return this.http.post(`${this.apiUrl}/products/${id}`,{id});
   }
 

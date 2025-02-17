@@ -57,7 +57,7 @@ export class ProductComponent {
       name: ['', [Validators.required]],
       price: ['', [Validators.required]],
       quantity: ['', [Validators.required]],
-      image:[''],
+      image:['',[Validators.required]],
     });
   }
 
@@ -67,6 +67,7 @@ export class ProductComponent {
   }
 
   getImageUrl(imagePath: string): string {
+    console.log('imagepath',imagePath);
     return `http://localhost:3000/${imagePath}`;
   }
   loadItems() {
@@ -170,7 +171,8 @@ export class ProductComponent {
    
       onFileChange(event: any): void {
         const file = event.target.files[0];
-      
+        console.log('file', file);
+        
         // Check if file is provided
         if (file) {
           // Check file type (only images are allowed)
@@ -190,7 +192,7 @@ export class ProductComponent {
           }
       
           // If file is an image, check the file size (1MB)
-          if (file.size > 1024*1024) { // 1MB = 1048576 bytes
+          if (file.size > 1024 * 1024) { // 1MB = 1048576 bytes
             Swal.fire({
               icon: 'error',
               title: 'Error...',
@@ -204,6 +206,7 @@ export class ProductComponent {
       
           // If both file type and size are valid, store the file
           this.selectedFile = file;
+          console.log('selectedFile',this.selectedFile);
       
           // Reading the file as Data URL for preview
           const reader = new FileReader();
@@ -218,7 +221,7 @@ export class ProductComponent {
           };
         }
       }
-      
+        
   
   onSubmit(): void {
   
@@ -266,15 +269,16 @@ export class ProductComponent {
         formData.append('quantity', this.productForm.get('quantity')?.value);
 
          // Check if the 'image' control has a file object, and append it to FormData
-        /*  const imageFile = this.productForm.get('image')?.value;
-        if (imageFile) {
+        //  const imageFile = this.productForm.get('image')?.value;
+       /* if (imageFile) {
           formData.append('image', imageFile);  // Append the actual file, not the path
         }  */
       // for preview
-          const fileInput = document.getElementById('imageInput') as HTMLInputElement;
+
+           const fileInput = document.getElementById('imageInput') as HTMLInputElement;
             if (fileInput.files && fileInput.files.length > 0) {
                formData.append('image', fileInput.files[0]);
-            }
+            } 
 
       // updating an existing product, 
         if (this.productId) {
@@ -317,25 +321,8 @@ export class ProductComponent {
       }
     } */
 
-  updateItem(id: number) {
-    const updatedName = prompt('Enter new name:');
-    if (updatedName) {
-      this.userServiceService
-        .updateItem(id, { name: updatedName })
-        .subscribe(() => {
-          this.loadItems();
-        });
-    }
-  }
-
-  /*  deleteItem(id: number) {
-      console.log('id',id);
-      if (confirm('Are you sure?')) {
-        this.userServiceService.deleteItem(id).subscribe(() => {
-          this.loadItems(); 
-        });
-      } */
-
+ 
+  
   deleteItem(id: number) {
     Swal.fire({
       title: 'Are you sure you want to delete this record??',
@@ -346,11 +333,11 @@ export class ProductComponent {
       confirmButtonText: 'Yes, delete it!',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.userServiceService.deleteItem(id).subscribe({
-          next: (response) => {
-            console.log('Delete successful:', response);
+        this.userServiceService.deleteProduct(id).subscribe({
+          next: (res) => {
+            console.log('Delete successful:', res);
             this.loadItems();
-            Swal.fire('Deleted!', 'Record has been deleted.', 'success');
+            Swal.fire('Deleted!', res.msg, 'success');
           },
           error: (error) => {
             console.error('Delete failed:', error);
