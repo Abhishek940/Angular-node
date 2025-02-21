@@ -22,7 +22,7 @@ export class ProductComponent {
   users: any;
   userName = '';
   selectedFile='';
-  productId: string | null = null;
+  productId: number | null = null;
   productForm!: FormGroup;
   productImage: string | null = null;  // To hold existing image URL (for update)
   //imageSrc: string ='';
@@ -44,7 +44,7 @@ export class ProductComponent {
  pageSize: number = 5;
  pageSizeOptions: number[] = [5, 10, 20];
  dataSource = new MatTableDataSource<any>(); // Initialize empty data source
-
+ isUpdateMode :boolean=false;
   constructor(
     private userServiceService: UserServiceService,
     private router: Router,
@@ -56,37 +56,59 @@ export class ProductComponent {
     this.productForm = this.fb.group({
       name: ['', [Validators.required]],
       price: ['', [Validators.required]],
-      quantity: ['', [Validators.required]],
-      image:[''],
+      quantity: [''],
+      image:['',],
+   
+    });
+
+    this.setImageValidators();
+       
+  }
+
+  setImageValidators() {
+    const image = this.productForm.get('image');
+    const quantity = this.productForm.get('quantity');
+
+    if(this.isUpdateMode){
+      quantity ?.clearValidators();
+    }else{
+      quantity?.setValidators([Validators.required]);
+    }
+
+    quantity?.updateValueAndValidity();
+  
+    if (this.isUpdateMode && this.imageSrc) {
+      image?.clearValidators();  // In update mode, it's not required if there's an existing image
+    } else {
+      image?.setValidators([Validators.required]);  // In add mode, it's required
+    }
+
+    image?.updateValueAndValidity();  // Revalidate the control after changing the validator
+  }
+
+  
+
+  getProductById(id: number): void {
+    this.userServiceService.getProductById(id).subscribe({
+      next: (res) => {
+        this.isUpdateMode = true; // Set update mode to true when editing
+        this.productForm.patchValue({
+          name: res.data.name,
+          price: res.data.price,
+          quantity: res.data.quantity,
+        });
+
+        // Set image src if the product already has an image
+        this.imageSrc = `http://localhost:3000/${res.data?.image}`;
+        this.setImageValidators();
+      },
+      error: (error) => {
+        console.error('Error fetching product:', error);
+      }
     });
   }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
-
-  getImageUrl(imagePath: string): string {
-    return `http://localhost:3000/${imagePath}`;
-  }
-  loadItems() {
-    this.userServiceService.getProducts().subscribe({
-      next: (res: any) => {
-        if (res?.data) {
-          this.dataSource = new MatTableDataSource(res.data); //  new instance
-          console.log('data',this.dataSource);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
-        }
-      },
-      error:(error) => {
-        console.error('Error fetching products:', error);
-      }
-  });
-  
-  }
-
-  getProductById(id: number) {
+ /*  getProductById(id: number) {
     this.userServiceService.getProductById(id).subscribe({
       next:(res) => {
         console.log('Fetched product:', res);
@@ -102,8 +124,37 @@ export class ProductComponent {
         console.error('Error fetching product:', error);
       }
   });
+  } */
+
+
+  
+  
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
+  getImageUrl(imagePath: string): string {
+    return `http://localhost:3000/${imagePath}`;
+  }
+  
+  loadItems() {
+    this.userServiceService.getProducts().subscribe({
+      next: (res: any) => {
+        if (res?.data) {
+          this.dataSource = new MatTableDataSource(res.data); //  new instance
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
+        }
+      },
+      error:(error) => {
+        console.error('Error fetching products:', error);
+      }
+  });
+  
+  }
+
+  
 
   ngAfterViewInit() {
     this.modal = new Modal(this.productModal.nativeElement);
@@ -129,7 +180,6 @@ export class ProductComponent {
     if (productId) {
       // Edit mode
       this.productId = productId;
-      console.log('Editing product:', this.productId);
       this.getProductById(productId); // Fetch product data
     } else {
       // Add mode
@@ -170,7 +220,7 @@ export class ProductComponent {
    
       onFileChange(event: any): void {
         const file = event.target.files[0];
-      
+              
         // Check if file is provided
         if (file) {
           // Check file type (only images are allowed)
@@ -190,7 +240,7 @@ export class ProductComponent {
           }
       
           // If file is an image, check the file size (1MB)
-          if (file.size > 1048576) { // 1MB = 1048576 bytes
+          if (file.size > 1024 * 1024) { // 1MB = 1048576 bytes
             Swal.fire({
               icon: 'error',
               title: 'Error...',
@@ -204,7 +254,7 @@ export class ProductComponent {
       
           // If both file type and size are valid, store the file
           this.selectedFile = file;
-      
+               
           // Reading the file as Data URL for preview
           const reader = new FileReader();
           reader.readAsDataURL(file);  // Read the file as a data URL
@@ -218,13 +268,12 @@ export class ProductComponent {
           };
         }
       }
-      
+        
   
   onSubmit(): void {
   
     if (this.productForm.invalid) {
-      console.log('Form Invalid:', this.productForm.invalid);
-      if (this.productForm.get('name')?.invalid) {
+    if (this.productForm.get('name')?.invalid) {
         Swal.fire({
           icon: 'error',
           title: 'Error...',
@@ -260,27 +309,28 @@ export class ProductComponent {
         })
       }
     } else {
-      console.log('Form Valid:', this.productForm.value);
+    //  console.log('Form Valid:', this.productForm.value);
         const formData = new FormData();
         formData.append('name', this.productForm.get('name')?.value);
         formData.append('price', this.productForm.get('price')?.value);
         formData.append('quantity', this.productForm.get('quantity')?.value);
 
          // Check if the 'image' control has a file object, and append it to FormData
-        /*  const imageFile = this.productForm.get('image')?.value;
-        if (imageFile) {
+        //  const imageFile = this.productForm.get('image')?.value;
+       /* if (imageFile) {
           formData.append('image', imageFile);  // Append the actual file, not the path
         }  */
       // for preview
-          const fileInput = document.getElementById('imageInput') as HTMLInputElement;
+
+        const fileInput = document.getElementById('imageInput') as HTMLInputElement;
             if (fileInput.files && fileInput.files.length > 0) {
                formData.append('image', fileInput.files[0]);
-            }
+         } 
 
       // updating an existing product, 
-        if (this.productId) {
-          formData.append('_id', this.productId);
-        }
+      if (this.isUpdateMode && this.productId) {
+        formData.append('_id', this.productId.toString());
+      }
 
       this.userServiceService.addOrUpdateProduct(formData).subscribe({
         next:(response) => {
@@ -318,25 +368,8 @@ export class ProductComponent {
       }
     } */
 
-  updateItem(id: number) {
-    const updatedName = prompt('Enter new name:');
-    if (updatedName) {
-      this.userServiceService
-        .updateItem(id, { name: updatedName })
-        .subscribe(() => {
-          this.loadItems();
-        });
-    }
-  }
-
-  /*  deleteItem(id: number) {
-      console.log('id',id);
-      if (confirm('Are you sure?')) {
-        this.userServiceService.deleteItem(id).subscribe(() => {
-          this.loadItems(); 
-        });
-      } */
-
+ 
+  
   deleteItem(id: number) {
     Swal.fire({
       title: 'Are you sure you want to delete this record??',
@@ -347,11 +380,11 @@ export class ProductComponent {
       confirmButtonText: 'Yes, delete it!',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.userServiceService.deleteItem(id).subscribe({
-          next: (response) => {
-            console.log('Delete successful:', response);
+        this.userServiceService.deleteProduct(id).subscribe({
+          next: (res) => {
+            console.log('Delete successful:', res);
             this.loadItems();
-            Swal.fire('Deleted!', 'Record has been deleted.', 'success');
+            Swal.fire('Deleted!', res.msg, 'success');
           },
           error: (error) => {
             console.error('Delete failed:', error);
@@ -362,8 +395,20 @@ export class ProductComponent {
     });
   }
 
-  onLogout() {
+  /* Logout() {
     this.userServiceService.logout();
     this.router.navigate(['/']);
-  }
+  } */
+
+    Logout() {
+      this.userServiceService.logout().subscribe({
+       next: (response) => {
+         this.router.navigate(['/']);
+        },
+        error:(error) => {
+          console.log('Logout failed:', error);
+        }
+    });
+    }
+    
 }

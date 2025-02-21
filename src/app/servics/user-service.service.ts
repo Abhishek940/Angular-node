@@ -20,7 +20,6 @@ export class UserServiceService {
     return this.http.post(`${this.apiUrl}/getProductById`, { id });
   }
   
-
   // Create 
   addOrUpdateProduct(product: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/add`, product);
@@ -32,25 +31,40 @@ export class UserServiceService {
   }
 
   // Delete 
-   deleteItem(id: number): Observable<any> {
+   deleteProduct(id: number): Observable<any> {
       return this.http.post(`${this.apiUrl}/products/${id}`,{id});
   }
 
   // add user
-
   addUser(user: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/addUser`, user);
   }
 
+// login
   login(userData:any){
     return this.http.post(`${this.apiUrl}/login`,userData)
   }
 
-  logout() {
-  
-    localStorage.removeItem('token');  
-    localStorage.removeItem('username');  
-  
+//forgot password
+  forgotPassword(post:any){
+    return this.http.post<any>(`${this.apiUrl}/forgotPass`,post)
   }
-  
+
+//reset-pass
+resetPassword(resetToken: string, password: string): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/reset-password`, {resetToken,password
+  });
+}
+
+refreshToken(refreshToken:any){
+  const storedRefreshToken = localStorage.getItem('refreshToken');
+  return this.http.post<any>(`${this.apiUrl}/refresh-token`, { refreshToken: storedRefreshToken });
+}
+
+  logout(){
+      localStorage.removeItem('token');  
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('username'); 
+      return this.http.post<any>(`${this.apiUrl}/logout`,{})
+    }
 }
