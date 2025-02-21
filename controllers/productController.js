@@ -120,14 +120,13 @@ const storage = multer.diskStorage({
   // Create the multer upload instance
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+    limits: { fileSize: 1 * 1024 * 1024 }, // 1MB file size limit
     fileFilter: (req, file, cb) => {
       // Only allow image files (JPG, JPEG, PNG)
       const fileTypes = /jpeg|jpg|png/;
       const mimeType = fileTypes.test(file.mimetype);
       const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
-  
-      if (mimeType && extName) {
+     if (mimeType && extName) {
         return cb(null, true);
       }
       cb(new Error('Only JPEG, JPG, and PNG files are allowed'));
@@ -135,8 +134,9 @@ const upload = multer({
   }).single('image'); 
   
     // Set up storage options for multer
+
    // Your add product function
-const add = async (req, res) => {
+   const add = async (req, res) => {
     // Handle file upload 
     upload(req, res, async (err) => {
       if (err) {
@@ -147,7 +147,7 @@ const add = async (req, res) => {
       }
   
       // Destructure product fields from request body
-      const { _id, name, price, quantity} = req.body;
+      const { _id, name, price, quantity } = req.body;
   
       // Joi schema validation
       const schema = Joi.object({
@@ -190,24 +190,26 @@ const add = async (req, res) => {
         if (req.file) {
           // If an image is uploaded, save its path
           imagePath = req.file.path;  // 'uploads/file'
+          console.log('imagePath:', imagePath);  // Debugging to verify the image path
         }
   
-        
         // For update, check if _id exists in the request body
         if (_id) {
           // Convert _id to a MongoDB ObjectId if it's a valid string
           const objectId = new mongoose.Types.ObjectId(_id);
           console.log("Updating product with Id:", objectId);
           const existingProduct = await Product.findById(objectId);
-
-                if (!existingProduct) {
-                  return res.status(404).json({
-                    status: false,
-                    msg: 'Product not found to update',
-                  });
-                }
+  
+          if (!existingProduct) {
+            return res.status(404).json({
+              status: false,
+              msg: 'Product not found to update',
+            });
+          }
+  
           // If no new image is uploaded, retain the existing image
-         imagePath = req.file ? req.file.path : existingProduct.image;
+          imagePath = req.file ? imagePath : existingProduct.image;
+  
           // Update operation if _id exists
           const updatedProduct = await Product.findByIdAndUpdate(
             objectId,
@@ -215,7 +217,6 @@ const add = async (req, res) => {
             { new: true }
           );
   
-          // Check if product exists for updating
           if (!updatedProduct) {
             return res.status(404).json({
               status: false,
@@ -238,7 +239,6 @@ const add = async (req, res) => {
             image: imagePath,  // Save the image path here
           });
   
-          // Return the newly created product
           return res.status(201).json({
             status: true,
             msg: 'Product added successfully!',
@@ -254,6 +254,7 @@ const add = async (req, res) => {
       }
     });
   };
+  
     
 
 const deleteProduct = async (req, res, next) => {
@@ -369,7 +370,7 @@ const getProduct = async (req, res) => {
         // Modify image paths to use forward slashes and be URL-friendly
         const modifiedProducts = products.map(product => {
             // Ensure product.image is a string before replacing backslashes
-            if (product.image && typeof product.image === '') {
+            if (product.image && typeof product.image === 'string') {
                 product.image = product.image.replace(/\\/g, '/'); // Convert backslashes to forward slashes
             }
             return product;
