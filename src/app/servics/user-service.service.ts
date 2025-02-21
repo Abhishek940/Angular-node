@@ -20,7 +20,6 @@ export class UserServiceService {
     return this.http.post(`${this.apiUrl}/getProductById`, { id });
   }
   
-
   // Create 
   addOrUpdateProduct(product: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/add`, product);
@@ -47,7 +46,7 @@ export class UserServiceService {
   }
 
 //forgot password
-  sendPassRestMail(post:any){
+  forgotPassword(post:any){
     return this.http.post<any>(`${this.apiUrl}/forgotPass`,post)
   }
 
@@ -57,9 +56,15 @@ resetPassword(resetToken: string, password: string): Observable<any> {
   });
 }
 
-  logout() {
-    localStorage.removeItem('token');  
-    localStorage.removeItem('username');  
-  }
-  
+refreshToken(refreshToken:any){
+  const storedRefreshToken = localStorage.getItem('refreshToken');
+  return this.http.post<any>(`${this.apiUrl}/refresh-token`, { refreshToken: storedRefreshToken });
+}
+
+  logout(){
+      localStorage.removeItem('token');  
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('username'); 
+      return this.http.post<any>(`${this.apiUrl}/logout`,{})
+    }
 }

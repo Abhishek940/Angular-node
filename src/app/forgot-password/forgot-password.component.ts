@@ -41,8 +41,7 @@ export class ForgotPasswordComponent {
     }
     if (this.forgotPasswordForm.valid) {
       const email = this.forgotPasswordForm.value;
-
-      this.UserServiceService.sendPassRestMail(email).subscribe({
+      this.UserServiceService.forgotPassword(email).subscribe({
        next: (res: any) => {
             Swal.fire({
             icon: 'success',
