@@ -16,6 +16,10 @@ const productSchema = new Schema({
       quantity: { 
         type: Number, 
         required: true 
+    },
+    image:{
+      type:String,
+
     }
 }, { timestamps: true });
 

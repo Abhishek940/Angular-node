@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const {productController, userController} = require('../controllers');
-const Authenticate = require('../middleware/authenticateJWT'); 
+const {Authenticate} = require('../middleware/authenticateJWT'); 
 
 router.post('/login',userController.login);
 router.post('/addUser',userController.addUser);
 router.post('/forgotPass',userController.forgotPassword);
 router.post('/reset-password',userController.resetPassword);
-
+router.post('/refresh-token',userController.refreshToken);
+router.post('/logout', userController.logout);
 
 // Apply authentication middleware to all  routes
 router.use(Authenticate);
@@ -16,7 +17,7 @@ router.use(Authenticate);
 router.post('/add', productController.add);
 router.post('/getProduct', productController.getProduct);
 router.post('/getProductById', productController.getProductById);
-router.delete('/products/:id', productController.deleteProduct);
+router.post('/products/:id', productController.deleteProduct);
 
 
 module.exports = router;

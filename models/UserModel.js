@@ -20,7 +20,16 @@ const userSchema = new Schema({
      password:{
         type: String,
         required:true
-     }
+     },
+     resetToken: {  
+        type: String,
+    },
+    resetTokenExpiration: {  
+        type: Date,
+    },
+    refreshToken:{
+        type:String,
+    }
    
  
 }, { timestamps: true });
@@ -38,8 +47,9 @@ userSchema.pre('save', async function (next) {
 });
 
 // Define an instance method for comparing passwords
-userSchema.methods.comparePassword = async function (inputPassword) {
+ userSchema.methods.comparePassword = async function (inputPassword) {
     return await bcrypt.compare(inputPassword, this.password); // Compare passwords
-};
+}; 
+
 
 module.exports = mongoose.model('User', userSchema, 'users');
