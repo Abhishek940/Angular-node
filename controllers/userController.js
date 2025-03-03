@@ -13,6 +13,7 @@ const crypto = require('crypto');
             mobile: req.body.mobile,
             email: req.body.email,
             password: req.body.password,
+            roleId:req.body.roleId,
         };
     
         // Joi schema validation
@@ -42,10 +43,13 @@ const crypto = require('crypto');
                 'string.email': '"email" must be a valid email address',
                 'any.required': '"email" is required',
             }),
-            password: Joi.string().min(6).required().messages({
+        password: Joi.string().min(6).required().messages({
                 'string.min': '"password" should have a minimum length of 6',
                 'any.required': '"password" is required',
             }),
+        roleId: Joi.string().required().messages({
+             'number.required':'Role is required',
+          })  
         });
     
         // Validate the data
@@ -77,14 +81,15 @@ const crypto = require('crypto');
                 });
             }
             // Destructure the body to get name, mobile, email, and password
-            const { name, mobile, email, password } = req.body;
+            const { name, mobile, email, password,roleId } = req.body;
     
             // Create new user in the database
             const resp = await User.create({ 
                 name,
                 mobile,
                 email,
-                password 
+                password,
+                roleId 
             });
     
             // Send success response
@@ -104,12 +109,61 @@ const crypto = require('crypto');
         }
     };
     
+    const getUserData = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page) || 1; // default page 1 
+            const limit = parseInt(req.query.limit) || 10; // default 10 items per page 
+            const skip = (page - 1) * limit; // Calculate items to skip
+    
+            // Fetch products with pagination
+            const userData = await User.find()
+                            .skip(skip)
+                            .limit(limit)
+                            .populate('roleId', 'name');
+    
+            // If no products are found
+            if (!userData || userData.length === 0) {
+                return res.status(404).json({
+                    message: 'No User found',
+                    status: 'error',
+                    data: []
+                });
+            }
+    
+               
+            const totalCount = await User.countDocuments();
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limit);
+    
+            // Return products along with pagination data
+            return res.status(200).json({
+                message: 'User retrieved successfully',
+                status: 'Success',
+                statusCode: 200,
+                data: userData,
+                pagination: {
+                    totalCount,
+                    totalPages,
+                    currentPage: page,
+                    pageSize: limit
+                }
+            });
+        } catch (err) {
+            return res.status(500).json({
+                message: 'Error fetching products',
+                status: 'error',
+                error: err.message
+            });
+        }
+    }; 
+
  // login
  const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email })
+                    .populate('roleId', 'name');;
         if (!user) {
             return res.status(400).json({
                 status: false,
@@ -128,16 +182,16 @@ const crypto = require('crypto');
 
         // Generate jwt Access Token (expires in 5 minutes)
         const accessToken = jwt.sign(
-            { userId: user._id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '1m' }
+            { userId: user._id, email: user.email,roleId:user.roleId },
+             process.env.JWT_SECRET,
+            { expiresIn: '15m' }
         );
 
         // Generate Refresh Token (expires in 5 minutes for testing)
         const refreshToken = jwt.sign(
-            { userId: user._id, email: user.email },
+            { userId: user._id, email: user.email ,roleId:user.roleId},
             process.env.JWT_REFRESH_SECRET,
-            { expiresIn: '2m' } // Set refresh token expiry to 5 minutes
+            { expiresIn: '30m' } // Set refresh token expiry to 5 minutes
         );
 
         user.refreshToken = refreshToken;
@@ -145,6 +199,8 @@ const crypto = require('crypto');
         return res.status(200).json({
             status: true,
             msg: 'Login successful',
+            name:user.name,
+            Role:user.roleId.name,
             token: accessToken, // Access token
             refreshToken: refreshToken, // Refresh token
         });
@@ -154,8 +210,7 @@ const crypto = require('crypto');
     }
 };
 
-     
-    
+   
   // forgot password
     
   const forgotPassword = async (req, res) => {
@@ -303,7 +358,7 @@ const refreshToken = async (req, res) => {
         const newAccessToken = jwt.sign(
             { userId: user._id, email: user.email },
             process.env.JWT_SECRET, // Access token secret
-            { expiresIn: '2m' }  // (5 minutes)
+            { expiresIn: '30m' }  // (30 minutes)
         );
 
         console.log('Generated new access token:', newAccessToken);
@@ -339,6 +394,7 @@ const refreshToken = req.body.refreshToken;
 
 module.exports= {
     addUser,
+    getUserData,
     login,
     forgotPassword,
     resetPassword,
