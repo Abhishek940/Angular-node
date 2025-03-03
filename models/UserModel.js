@@ -21,6 +21,11 @@ const userSchema = new Schema({
         type: String,
         required:true
      },
+     roleId: {
+        type: mongoose.Schema.Types.ObjectId,  // Reference to Role collection
+        ref: 'role',  
+        required: true,
+    },
      resetToken: {  
         type: String,
     },
