@@ -9,6 +9,8 @@
   
   <!-- Modal -->
   <app-navbar></app-navbar>
+  
+  <app-role *ngIf="isAdmin()"></app-role>
   <!-- Add or Edit Product Button -->
   <button type="button" class="btn btn-info btn-lg" (click)="openModal()">Add Product</button>
   
@@ -75,12 +77,15 @@
           <td mat-cell *matCellDef="let element; let i = index"> {{ i + 1 }} </td>
         </ng-container>
 
-        <ng-container matColumnDef="image">
+          <ng-container matColumnDef="image">
           <th mat-header-cell *matHeaderCellDef> Image </th>
           <td mat-cell *matCellDef="let element"> 
-            <img [src]="getImageUrl(element?.image)" alt="Product Image" style="max-width: 80px; max-height: 80px">
-            </td>
+            <img [src]="getImageUrl(element?.image)" 
+                 alt="Product Image" 
+                 style="max-width: 80px; max-height: 80px; width: 80px; height: 80px">
+          </td>
         </ng-container>
+        
     
        <ng-container matColumnDef="productName">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Product Name </th>

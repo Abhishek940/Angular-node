@@ -69,7 +69,8 @@ export class LoginComponent {
                 localStorage.setItem('token', res.token);
                 localStorage.setItem('refreshToken', res.refreshToken); // Refresh token
                 localStorage.setItem('username', res.name);
-                            
+                localStorage.setItem('role', res.Role);
+                          
                 Swal.fire({
                   icon: 'success',
                   title: 'Success!',
@@ -135,15 +136,7 @@ export class LoginComponent {
             })
           );
         }
-     /* logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('username');
-    //  this.UserServiceService.logout();
-      this.router.navigate(['/login'])
-    } */
-
-      
+       
       
         // Manual Logout Function - When the user clicks the "Logout" button
         logout(): void {
@@ -151,31 +144,18 @@ export class LoginComponent {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('username');
-      
-          // Optionally call the UserService to perform any necessary backend logout
           this.UserServiceService.logout().subscribe({
             next: (response) => {
               console.log('Logged out successfully:', response.msg);
-              this.router.navigate(['/login']);  // Navigate to login page
+              this.router.navigate(['/']);  
             },
             error: (err) => {
               console.error('Logout failed:', err);
-              this.router.navigate(['/login']);  // Navigate to login page even if error occurs
+              this.router.navigate(['/']);  
             }
           });
         }
       
-        // This method will be used by the Interceptor when the refresh token expires.
-        autoLogout(): void {
-          // Remove items from localStorage
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('username');
-      
-          // Navigate to the login page
-          this.router.navigate(['/login']);
-        }
-      
-      
+        
 
 }

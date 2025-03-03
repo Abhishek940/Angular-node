@@ -39,10 +39,6 @@ export class UserServiceService {
   addUser(user: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/addUser`, user);
   }
-// get UserData
-  getUserData():Observable<any>{
-    return this.http.post(`${this.apiUrl}/getuserData`,{})
-  }
 
 // login
   login(userData:any){
@@ -71,5 +67,4 @@ refreshToken(refreshToken:any){
       localStorage.removeItem('username'); 
       return this.http.post<any>(`${this.apiUrl}/logout`,{})
     }
-
 }
