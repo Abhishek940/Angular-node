@@ -1,0 +1,29 @@
+<button type="button" class="btn btn-info btn-lg" (click)="openModal()">Add Role</button>
+  
+  <!-- Modal -->
+  <div class="modal fade" id="roleModal" tabindex="-1" role="dialog" aria-labelledby="roleModalLabel" aria-hidden="true" #roleModal>
+  
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="roleModalLabel">{{ roleId ? 'Edit Role' : 'Add New Role' }}</h5>
+          <button type="button" class="close" (click)="closeModal()" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="roleForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+              <label for="roleName">Role Name</label>
+              <input type="text" class="form-control" formControlName="name" placeholder="Enter Role Name" (input)="onValidateString($event)">
+            </div>
+                  
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+              <button type="submit" class="btn btn-primary" >{{ roleId ? 'Update Role' : 'Save Role' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>

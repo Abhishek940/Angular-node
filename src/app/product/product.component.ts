@@ -52,6 +52,7 @@ export class ProductComponent {
   ) {}
 
   ngOnInit() {
+    this.getuserData();
     this.loadItems();
     this.productForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -61,7 +62,7 @@ export class ProductComponent {
    
     });
 
-    this.setImageValidators();
+  this.setImageValidators();
        
   }
 
@@ -71,7 +72,7 @@ export class ProductComponent {
 
     if(this.isUpdateMode){
       quantity ?.clearValidators();
-    }else{
+     }else{
       quantity?.setValidators([Validators.required]);
     }
 
@@ -154,7 +155,21 @@ export class ProductComponent {
   
   }
 
+  getuserData() {
+    this.userServiceService.getUserData().subscribe({
+      next: (res: any) => {
+        if (res?.data) {
+          this.dataSource = new MatTableDataSource(res.data); //  new instance
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
+        }
+      },
+      error:(error) => {
+        console.error('Error fetching products:', error);
+      }
+  });
   
+  }
 
   ngAfterViewInit() {
     this.modal = new Modal(this.productModal.nativeElement);
@@ -220,8 +235,6 @@ export class ProductComponent {
    
       onFileChange(event: any): void {
         const file = event.target.files[0];
-              
-        // Check if file is provided
         if (file) {
           // Check file type (only images are allowed)
           const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -273,6 +286,7 @@ export class ProductComponent {
   onSubmit(): void {
   
     if (this.productForm.invalid) {
+      
     if (this.productForm.get('name')?.invalid) {
         Swal.fire({
           icon: 'error',
@@ -410,5 +424,10 @@ export class ProductComponent {
         }
     });
     }
+
+    isAdmin(): boolean {
+      const role = localStorage.getItem('role');
+      return role === 'admin';  // Check if the stored role is 'admin'
+  }
     
 }

@@ -25,8 +25,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401 || error.status === 403) {
-          console.error('Token expired or invalid, attempting to refresh or logout...');
-          // Get refresh token from localStorage
+         // Get refresh token from localStorage
           const refreshToken = localStorage.getItem('refreshToken');
           if (refreshToken) {
             return this.userService.refreshToken(refreshToken).pipe(
