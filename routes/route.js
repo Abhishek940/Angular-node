@@ -12,7 +12,6 @@ router.post('/logout', userController.logout);
 router.post('/getRole', roleController.getRoles);
 // Apply authentication middleware to all  routes
 router.use(Authenticate);
-
 // Protected routes 
 router.post('/add', productController.add);
 router.post('/getProduct', productController.getProduct);
