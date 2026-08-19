@@ -3,8 +3,9 @@ const Joi = require('joi');
 const mongoose = require('mongoose'); 
 const multer = require('multer');
 const path = require('path');
-
-
+//const SHA256 = require("crypto-js/sha256");
+const AES = require('crypto-js/aes');  // Import AES encryption from crypto-js
+const Utf8 = require('crypto-js/enc-utf8');  // Import Utf8 encoding from crypto-js
 /* const add = async (req, res) => {
     const data = {
         name: req.body.name,
@@ -103,7 +104,7 @@ const path = require('path');
     };
      */
    
-
+    const SECRET_KEY = process.env.SECRET_KEY || 'your_default_secret_key';
     // Set up storage options for multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -356,7 +357,8 @@ const getProduct = async (req, res) => {
         // Fetch products with pagination
         const products = await Product.find()
                         .skip(skip)
-                        .limit(limit);
+                        .limit(limit)
+                        .select('name price quantity createdAt updatedAt image');
 
         // If no products are found
         if (!products || products.length === 0) {
@@ -373,7 +375,14 @@ const getProduct = async (req, res) => {
             if (product.image && typeof product.image === 'string') {
                 product.image = product.image.replace(/\\/g, '/'); // Convert backslashes to forward slashes
             }
+           // const encryptedId = AES.encrypt(product._id.toString(), SECRET_KEY).toString();
             return product;
+
+           /* return {
+            ...product.toObject(), // Convert mongoose document to plain object
+            _id: encryptedId, 
+        }; */
+
         });
 
         const totalCount = await Product.countDocuments();
@@ -413,9 +422,9 @@ const getProductById = async (req, res) => {
           status: 'error',
           data: null
         });
-      }
+      }``
   
-      // Fetch the product by its ID from the database
+      // Fetch the product by its Id from the database
       const product = await Product.findById(productId);
   
       // If the product does not exist
