@@ -3,14 +3,15 @@ const { config } = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const {DB_URL, PORT} = require('./config');
+// const {DB_URL, PORT} = require('./config');
+const { DB_URL } = require('./config');
 const routes = require('./routes/route');
 const app = express();
 const path = require('path');
 
 // Connect to MongoDB
 const mongoURI = DB_URL;  
-console.log("port",PORT);
+//console.log("port",PORT);
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('MongoDB connected!');
@@ -28,7 +29,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+/*
 const PORTS = config.PORT || 3000; 
 app.listen(PORTS, () => {
   console.log(`Server running on http://localhost:${PORTS}`);
+});
+*/
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
 });

@@ -191,7 +191,7 @@ const upload = multer({
         if (req.file) {
           // If an image is uploaded, save its path
           imagePath = req.file.path;  // 'uploads/file'
-          console.log('imagePath:', imagePath);  // Debugging to verify the image path
+          console.log('imagePath:', imagePath);  //  verify the image path
         }
   
         // For update, check if _id exists in the request body
