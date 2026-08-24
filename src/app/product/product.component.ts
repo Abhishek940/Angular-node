@@ -416,6 +416,7 @@ aiLoading: boolean = false;
     });
   }
 
+  
   /* Logout() {
     this.userServiceService.logout();
     this.router.navigate(['/']);

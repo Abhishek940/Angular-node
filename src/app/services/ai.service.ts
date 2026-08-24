@@ -20,3 +20,4 @@ export class AiService {
     return this.http.post<AiResponse>(this.apiUrl,{ message } );
   }
 }
+
