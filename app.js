@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 // const {DB_URL, PORT} = require('./config');
 const { DB_URL } = require('./config');
 const routes = require('./routes/route');
+const aiRoutes = require('./routes/ai');
 const app = express();
 const path = require('path');
 
@@ -25,6 +26,7 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 app.use(cors());
 app.use(express.json());
 app.use('/api',routes);
+app.use('/api/ai', aiRoutes);
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -37,7 +39,6 @@ app.listen(PORTS, () => {
 */
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
