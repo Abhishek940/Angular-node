@@ -26,6 +26,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { RoleComponent } from './role/role.component';
+import { ParentComponentComponent } from './parent-component/parent-component.component';
+import { ChildComponentComponent } from './child-component/child-component.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +38,9 @@ import { RoleComponent } from './role/role.component';
     NavbarComponent,
     ForgotPasswordComponent,
     ResetPasswordComponent,
-    RoleComponent
+    RoleComponent,
+    ParentComponentComponent,
+    ChildComponentComponent
   ],
   imports: [
     BrowserModule,

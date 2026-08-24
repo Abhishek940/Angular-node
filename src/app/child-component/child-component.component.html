@@ -1,0 +1,31 @@
+<!--
+<p>Received from parent:{{name}}</p>
+
+<button (click)="sendMessage()">Send Message</button>
+-->
+
+<div class="employee-card">
+<!--
+  <h3>{{ employee.name }}</h3>
+
+  <p>
+    Email: {{ employee.email }}
+  </p>
+
+  <p>
+    Department: {{ employee.department }}
+  </p>
+-->
+
+  <button  type="button"
+  class="btn btn-sm btn-primary me-2" (click)="edit()">
+    Edit
+  </button>
+
+
+  <button   type="button"
+  class="btn btn-sm btn-danger me-2" (click)="delete()">
+    Delete
+  </button>
+
+</div>

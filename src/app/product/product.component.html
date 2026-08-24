@@ -122,5 +122,54 @@
       
     </div>
        
+    <!-- AI Assistant -->
+<div class="card mt-4 mb-4">
+
+  <div class="card-header bg-primary text-white">
+    <h4 class="mb-0">AI Assistant</h4>
+  </div>
+
+  <div class="card-body">
+
+    <div class="form-group">
+      <label for="aiMessage">Ask AI</label>
+
+      <textarea
+        id="aiMessage"
+        class="form-control"
+        rows="4"
+        [(ngModel)]="aiMessage"
+        placeholder="Ask anything.">
+      </textarea>
+    </div>
+
+    <button type="button" class="btn btn-primary mt-3" (click)="askAI()" [disabled]="aiLoading || !aiMessage.trim()">
+      <span *ngIf="!aiLoading">Submit</span>
+
+      <span *ngIf="aiLoading">
+        <span class="spinner-border spinner-border-sm"></span>
+        Thinking...
+      </span>
+
+    </button>
+
+    <!-- AI Response -->
+    <div
+      *ngIf="aiAnswerHtml"
+      class="card mt-4">
+
+      <div class="card-header bg-light">
+        <strong>AI Response</strong>
+      </div>
+
+      <div
+        class="card-body ai-answer"
+        [innerHTML]="aiAnswerHtml">
+      </div>
+
+    </div>
+
+  </div>
+</div>
   </div>
   

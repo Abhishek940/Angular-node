@@ -29,4 +29,47 @@
     text-align: center;
   }
   
+
+  .ai-answer {
+  padding: 20px;
+  line-height: 1.7;
+  font-size: 16px;
+  color: #333;
+}
+
+.ai-answer h1,
+.ai-answer h2,
+.ai-answer h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.ai-answer p {
+  margin-bottom: 12px;
+}
+
+.ai-answer ul,
+.ai-answer ol {
+  margin-bottom: 15px;
+  padding-left: 30px;
+}
+
+.ai-answer code {
+  background: #f4f4f4;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.ai-answer pre {
+  background: #1e1e1e;
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.ai-answer strong {
+  font-weight: 700;
+}
   

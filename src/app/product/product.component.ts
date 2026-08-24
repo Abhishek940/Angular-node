@@ -8,7 +8,8 @@ import Swal from 'sweetalert2';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-
+import { AiService } from '../services/ai.service';
+import { marked } from 'marked';
 @Component({
   selector: 'app-product',
   standalone: false,
@@ -45,10 +46,17 @@ export class ProductComponent {
  pageSizeOptions: number[] = [5, 10, 20];
  dataSource = new MatTableDataSource<any>(); // Initialize empty data source
  isUpdateMode :boolean=false;
+
+aiMessage: string = '';
+aiAnswer: string = '';
+aiAnswerHtml: string = '';
+aiLoading: boolean = false;
+
   constructor(
     private userServiceService: UserServiceService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private aiService: AiService
   ) {}
 
   ngOnInit() {
@@ -285,7 +293,7 @@ export class ProductComponent {
   
   onSubmit(): void {
   
-    if (this.productForm.invalid) {
+   if (this.productForm.invalid) {
       
     if (this.productForm.get('name')?.invalid) {
         Swal.fire({
@@ -396,7 +404,6 @@ export class ProductComponent {
       if (result.isConfirmed) {
         this.userServiceService.deleteProduct(id).subscribe({
           next: (res) => {
-            console.log('Delete successful:', res);
             this.loadItems();
             Swal.fire('Deleted!', res.msg, 'success');
           },
@@ -425,9 +432,52 @@ export class ProductComponent {
     });
     }
 
-    isAdmin(): boolean {
+   isAdmin(): boolean {
       const role = localStorage.getItem('role');
       return role === 'admin';  // Check if the stored role is 'admin'
   }
     
+
+async askAI(): Promise<void> {
+
+  if (!this.aiMessage.trim()) {
+    return;
+  }
+
+  this.aiLoading = true;
+  this.aiAnswer = '';
+  this.aiAnswerHtml = '';
+
+  this.aiService.askAI(this.aiMessage).subscribe({
+    next: async (response) => {
+
+      if (response.success) {
+
+        this.aiAnswer = response.answer || '';
+
+        this.aiAnswerHtml = await marked.parse(
+          this.aiAnswer
+        );
+
+      } else {
+
+        this.aiAnswerHtml =
+          response.message || 'No answer received';
+      }
+
+      this.aiLoading = false;
+    },
+
+    error: (error) => {
+
+      console.error('AI Error:', error);
+
+      this.aiAnswerHtml =
+        `<p>${error?.error?.message || 'Unable to connect to AI server'}</p>`;
+
+      this.aiLoading = false;
+    }
+  });
+}
+
 }

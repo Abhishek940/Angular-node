@@ -8,6 +8,7 @@ import { RoleGuard } from './role.guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import {ResetPasswordComponent} from './reset-password/reset-password.component';
 import { RoleComponent } from './role/role.component';
+import { ParentComponentComponent } from './parent-component/parent-component.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -16,7 +17,7 @@ const routes: Routes = [
   { path:'reset-password/:resetToken',component:ResetPasswordComponent},
   { path: 'product', component: ProductComponent,canActivate:[AuthGuard] },
   { path:'role',component:RoleComponent,canActivate:[AuthGuard,RoleGuard]},
-  
+  { path:'parent',component:ParentComponentComponent}, 
 ];
 
 @NgModule({

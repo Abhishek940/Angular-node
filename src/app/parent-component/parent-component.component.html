@@ -1,0 +1,54 @@
+<h1>Parent Component</h1>
+<!--
+<p>Parent name:{{parentName}}</p>
+<app-child-component [name] = "parentName" (message)="receivedMessage($event)"></app-child-component>
+<hr>
+<h3>Message from child</h3>
+
+<p>{{messagefromchild}}</p> -->
+
+<hr>
+<h2>Employee List</h2>
+
+<div class="container mt-4">
+  <h3>Employee List</h3>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Employee Name</th>
+          <th>Email</th>
+          <th>Department</th>
+           <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let employee of employees; let i = index">
+
+          <td>{{ i + 1 }}</td>
+
+          <td>{{ employee.name }}</td>
+
+          <td>{{ employee.email }}</td>
+
+          <td>{{ employee.department }}</td>
+
+        
+          <td>
+            <app-child-component
+              [employee]="employee"
+              (editEmployee)="editEmployee($event)"
+              (deleteEmployee)="deleteEmployee($event)">
+            </app-child-component>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

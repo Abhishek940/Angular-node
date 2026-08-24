@@ -70,8 +70,7 @@ export class RegistrationComponent {
     }
 
      onSubmit(): void {
-           
-           if (this.registrationForm.invalid) {
+            if (this.registrationForm.invalid) {
              if (this.registrationForm.get('name')?.invalid) {
                 Swal.fire({
                   icon: 'error',
