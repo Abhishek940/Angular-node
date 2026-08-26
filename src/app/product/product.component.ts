@@ -51,7 +51,7 @@ aiMessage: string = '';
 aiAnswer: string = '';
 aiAnswerHtml: string = '';
 aiLoading: boolean = false;
-
+ragSources: any[] = [];
   constructor(
     private userServiceService: UserServiceService,
     private router: Router,
@@ -96,7 +96,6 @@ aiLoading: boolean = false;
   }
 
   
-
   getProductById(id: number): void {
     this.userServiceService.getProductById(id).subscribe({
       next: (res) => {
@@ -135,9 +134,6 @@ aiLoading: boolean = false;
   });
   } */
 
-
-  
-  
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -390,9 +386,7 @@ aiLoading: boolean = false;
       }
     } */
 
- 
-  
-  deleteItem(id: number) {
+   deleteItem(id: number) {
     Swal.fire({
       title: 'Are you sure you want to delete this record??',
       icon: 'warning',
@@ -416,7 +410,7 @@ aiLoading: boolean = false;
     });
   }
 
-  
+
   /* Logout() {
     this.userServiceService.logout();
     this.router.navigate(['/']);
@@ -480,5 +474,11 @@ async askAI(): Promise<void> {
     }
   });
 }
+
+
+
+
+
+
 
 }
