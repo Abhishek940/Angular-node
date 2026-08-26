@@ -5,8 +5,10 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 // const {DB_URL, PORT} = require('./config');
 const { DB_URL } = require('./config');
+
 const routes = require('./routes/route');
 const aiRoutes = require('./routes/ai');
+
 const app = express();
 const path = require('path');
 
@@ -31,6 +33,19 @@ app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ========================================
+// RAG ROUTES
+// ========================================
+
+const ragRoutes =
+  require("./routes/ragRoutes");
+
+app.use(
+  "/api/rag",
+  ragRoutes
+);
+
 /*
 const PORTS = config.PORT || 3000; 
 app.listen(PORTS, () => {
