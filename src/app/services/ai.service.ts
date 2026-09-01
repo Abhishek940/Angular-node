@@ -7,24 +7,24 @@ export interface AiResponse {
   success: boolean;
   answer?: string;
   message?: string;
-  
-}
-
+ }
 export interface RagSource {
   source: string;
   chunkIndex: number;
   score: number;
   text?: string;
 }
+
 @Injectable({
   providedIn: 'root'
 })
+
 export class AiService {
 
   private apiUrl = 'http://localhost:3000/api/ai';
   constructor(private http: HttpClient) {}
 
-  askAI(message: string): Observable<AiResponse> {
+ askAI(message: string): Observable<AiResponse> {
     return this.http.post<AiResponse>(this.apiUrl,{ message } );
   }
 

@@ -434,7 +434,6 @@ ragSources: any[] = [];
     
 
 async askAI(): Promise<void> {
-
   if (!this.aiMessage.trim()) {
     return;
   }
@@ -445,40 +444,26 @@ async askAI(): Promise<void> {
 
   this.aiService.askAI(this.aiMessage).subscribe({
     next: async (response) => {
-
       if (response.success) {
-
         this.aiAnswer = response.answer || '';
-
         this.aiAnswerHtml = await marked.parse(
           this.aiAnswer
         );
-
       } else {
 
         this.aiAnswerHtml =
           response.message || 'No answer received';
       }
-
       this.aiLoading = false;
     },
-
     error: (error) => {
-
       console.error('AI Error:', error);
-
       this.aiAnswerHtml =
         `<p>${error?.error?.message || 'Unable to connect to AI server'}</p>`;
-
       this.aiLoading = false;
     }
   });
 }
-
-
-
-
-
 
 
 }
