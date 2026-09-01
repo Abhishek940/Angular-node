@@ -9,7 +9,816 @@ const {
   deleteProduct
 } = require("./productTools");
 
-const { askRAG } = require("./ragService");
+const {
+  askRAG
+} = require("./ragService");
+
+
+// =====================================================
+// CONFIG
+// =====================================================
+
+const MODEL = "gemini-3.6-flash";
+
+const MAX_AGENT_STEPS = 10;
+
+const GEMINI_API_KEY =
+  process.env.GEMINI_API_KEY;
+
+
+// =====================================================
+// GEMINI REST URL
+// =====================================================
+
+const GEMINI_URL =
+  `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+
+// =====================================================
+// VALIDATION
+// =====================================================
+
+function validateConfig() {
+
+  if (!GEMINI_API_KEY) {
+
+    throw new Error(
+      "GEMINI_API_KEY is missing from .env"
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// TOOL DECLARATIONS
+// =====================================================
+
+const tools = [
+  {
+    functionDeclarations: [
+
+      // =================================================
+      // GET ALL PRODUCTS
+      // =================================================
+
+      {
+        name: "getAllProducts",
+
+        description:
+          "Get all actual products stored in MongoDB.",
+
+        parameters: {
+          type: "OBJECT",
+
+          properties: {}
+        }
+      },
+
+
+      // =================================================
+      // SEARCH PRODUCTS
+      // =================================================
+
+      {
+        name: "searchProducts",
+
+        description:
+          "Search actual MongoDB products by product name or keyword.",
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {
+
+            search: {
+
+              type: "STRING",
+
+              description:
+                "Product name or keyword to search."
+
+            }
+
+          },
+
+          required: [
+            "search"
+          ]
+
+        }
+
+      },
+
+
+      // =================================================
+      // CHEAPEST
+      // =================================================
+
+      {
+        name: "getCheapestProduct",
+
+        description:
+          "Find the actual product with the lowest price in MongoDB.",
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {}
+
+        }
+
+      },
+
+
+      // =================================================
+      // MOST EXPENSIVE
+      // =================================================
+
+      {
+        name: "getMostExpensiveProduct",
+
+        description:
+          "Find the actual product with the highest price in MongoDB.",
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {}
+
+        }
+
+      },
+
+
+      // =================================================
+      // COUNT
+      // =================================================
+
+      {
+        name: "getProductCount",
+
+        description:
+          "Get the total number of products stored in MongoDB.",
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {}
+
+        }
+
+      },
+
+
+      // =================================================
+      // CREATE
+      // =================================================
+
+      {
+        name: "createProduct",
+
+        description: `
+Create a new product in MongoDB.
+
+Only call this when the user explicitly
+asks to create or add a product.
+`,
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {
+
+            name: {
+
+              type: "STRING",
+
+              description:
+                "Product name."
+
+            },
+
+            price: {
+
+              type: "NUMBER",
+
+              description:
+                "Product price."
+
+            },
+
+            quantity: {
+
+              type: "NUMBER",
+
+              description:
+                "Product quantity."
+
+            }
+
+          },
+
+          required: [
+            "name",
+            "price",
+            "quantity"
+          ]
+
+        }
+
+      },
+
+
+      // =================================================
+      // UPDATE
+      // =================================================
+
+      {
+        name: "updateProduct",
+
+        description: `
+Update an existing product in MongoDB.
+
+Only call this when the user explicitly
+asks to update a product.
+`,
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {
+
+            name: {
+
+              type: "STRING",
+
+              description:
+                "Existing product name."
+
+            },
+
+            price: {
+
+              type: "NUMBER",
+
+              description:
+                "New product price."
+
+            },
+
+            quantity: {
+
+              type: "NUMBER",
+
+              description:
+                "New product quantity."
+
+            }
+
+          },
+
+          required: [
+            "name",
+            "price",
+            "quantity"
+          ]
+
+        }
+
+      },
+
+
+      // =================================================
+      // DELETE
+      // =================================================
+
+      {
+        name: "deleteProduct",
+
+        description: `
+Delete an existing product from MongoDB.
+
+This is a destructive operation.
+
+Only call this when the user explicitly
+asks to delete a product.
+`,
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {
+
+            name: {
+
+              type: "STRING",
+
+              description:
+                "Product name to delete."
+
+            }
+
+          },
+
+          required: [
+            "name"
+          ]
+
+        }
+
+      },
+
+
+      // =================================================
+      // RAG
+      // =================================================
+
+      {
+        name: "searchKnowledgeBase",
+
+        description: `
+Search the company's knowledge base.
+
+Use this for company-specific information:
+
+- company name
+- company history
+- founder
+- location
+- services
+- mission
+- return policy
+- business policies
+
+Never invent company-specific information.
+`,
+
+        parameters: {
+
+          type: "OBJECT",
+
+          properties: {
+
+            query: {
+
+              type: "STRING",
+
+              description:
+                "Question to search in the knowledge base."
+
+            }
+
+          },
+
+          required: [
+            "query"
+          ]
+
+        }
+
+      }
+
+    ]
+  }
+];
+
+
+// =====================================================
+// SYSTEM INSTRUCTION
+// =====================================================
+
+const SYSTEM_INSTRUCTION = `
+
+You are an autonomous Agentic AI assistant.
+
+You have access to:
+
+1. MongoDB product tools.
+2. Company knowledge-base RAG.
+3. General knowledge.
+
+=====================================================
+PRODUCT DATA
+=====================================================
+
+Product information MUST come from MongoDB.
+
+Never invent product information.
+
+For product questions use the appropriate tool.
+
+Examples:
+
+"What is the cheapest product?"
+Use getCheapestProduct.
+
+"What is the most expensive product?"
+Use getMostExpensiveProduct.
+
+"How many products are there?"
+Use getProductCount.
+
+"Show all products."
+Use getAllProducts.
+
+"Find laptop."
+Use searchProducts.
+
+"What is the price of iPhone?"
+Use searchProducts.
+
+"Search mobile."
+Use searchProducts.
+
+
+=====================================================
+CREATE
+=====================================================
+
+Only create products when the user explicitly
+asks to create/add a product.
+
+Example:
+
+"Create iPhone price 80000 quantity 5"
+
+Use createProduct.
+
+
+=====================================================
+UPDATE
+=====================================================
+
+Only update products when explicitly requested.
+
+Example:
+
+"Update laptop price to 50000 quantity 10"
+
+Use updateProduct.
+
+
+=====================================================
+DELETE
+=====================================================
+
+Only delete products when explicitly requested.
+
+Example:
+
+"Delete iPhone"
+
+Use deleteProduct.
+
+
+=====================================================
+COMPANY KNOWLEDGE
+=====================================================
+
+For company-specific questions use:
+
+searchKnowledgeBase.
+
+Examples:
+
+"What is the company name?"
+
+"Who is the founder?"
+
+"Where is the company located?"
+
+"What services do you provide?"
+
+"What is the return policy?"
+
+
+=====================================================
+GENERAL QUESTIONS
+=====================================================
+
+For general questions such as:
+
+"What is Node.js?"
+
+"What is Angular?"
+
+"What is MongoDB?"
+
+"What is Express?"
+
+"What is REST API?"
+
+"What is Agentic AI?"
+
+answer using your general knowledge.
+
+Do not use product tools for general questions.
+
+Do not use the company knowledge base for
+general questions.
+
+
+=====================================================
+MULTI-STEP AGENTIC REASONING
+=====================================================
+
+You may call multiple tools.
+
+Example:
+
+"Find the cheapest laptop and tell me
+the return policy."
+
+You should:
+
+1. Search for laptop products.
+2. Inspect the returned products.
+3. Determine the cheapest laptop.
+4. Search the knowledge base.
+5. Combine the results.
+6. Give one final answer.
+
+
+=====================================================
+IMPORTANT
+=====================================================
+
+Never invent database information.
+
+Never invent company information.
+
+Always inspect tool results.
+
+If no product exists, say that it was not found.
+
+If the knowledge base does not contain the
+information, say so.
+
+Do not expose internal tool names.
+
+Do not expose implementation details.
+
+Give a natural final response.
+
+`;
+
+
+// =====================================================
+// EXECUTE TOOL
+// =====================================================
+
+async function executeTool(name, args) {
+
+  console.log("\n================================");
+  console.log("EXECUTING TOOL");
+  console.log("TOOL:", name);
+  console.log("ARGS:", args);
+  console.log("================================");
+
+
+  switch (name) {
+
+    // =================================================
+    // PRODUCTS
+    // =================================================
+
+    case "getAllProducts":
+
+      return await getAllProducts();
+
+
+    case "searchProducts":
+
+      return await searchProducts(
+        args?.search
+      );
+
+
+    case "getCheapestProduct":
+
+      return await getCheapestProduct();
+
+
+    case "getMostExpensiveProduct":
+
+      return await getMostExpensiveProduct();
+
+
+    case "getProductCount":
+
+      return await getProductCount();
+
+
+    // =================================================
+    // CREATE
+    // =================================================
+
+    case "createProduct":
+
+      return await createProduct(
+        args?.name,
+        args?.price,
+        args?.quantity
+      );
+
+
+    // =================================================
+    // UPDATE
+    // =================================================
+
+    case "updateProduct":
+
+      return await updateProduct(
+        args?.name,
+        args?.price,
+        args?.quantity
+      );
+
+
+    // =================================================
+    // DELETE
+    // =================================================
+
+    case "deleteProduct":
+
+      return await deleteProduct(
+        args?.name
+      );
+
+
+    // =================================================
+    // RAG
+    // =================================================
+
+    case "searchKnowledgeBase":
+
+      return await askRAG(
+        args?.query
+      );
+
+
+    // =================================================
+    // UNKNOWN
+    // =================================================
+
+    default:
+
+      throw new Error(
+        `Unknown tool: ${name}`
+      );
+
+  }
+
+}
+
+
+// =====================================================
+// CALL GEMINI REST API
+// =====================================================
+
+async function callGemini(contents) {
+
+  const requestBody = {
+
+    systemInstruction: {
+
+      parts: [
+
+        {
+          text:
+            SYSTEM_INSTRUCTION
+        }
+
+      ]
+
+    },
+
+    contents,
+
+    tools,
+
+    generationConfig: {
+
+      temperature: 0.2
+
+    }
+
+  };
+
+
+  console.log(
+    "\nSending request to Gemini..."
+  );
+
+
+  const response =
+    await fetch(
+      GEMINI_URL,
+      {
+
+        method: "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json"
+
+        },
+
+        body:
+          JSON.stringify(
+            requestBody
+          )
+
+      }
+    );
+
+
+  const data =
+    await response.json();
+
+
+  if (!response.ok) {
+
+    console.error(
+      "Gemini API ERROR:",
+      JSON.stringify(
+        data,
+        null,
+        2
+      )
+    );
+
+
+    const error =
+      new Error(
+        data?.error?.message ||
+        `Gemini API error: ${response.status}`
+      );
+
+
+    error.status =
+      response.status;
+
+
+    throw error;
+
+  }
+
+
+  return data;
+
+}
+
+
+// =====================================================
+// GET MODEL CONTENT
+// =====================================================
+
+function getModelContent(data) {
+
+  return (
+    data
+      ?.candidates
+      ?.[0]
+      ?.content
+  );
+
+}
+
+
+// =====================================================
+// GET FUNCTION CALLS
+// =====================================================
+
+function getFunctionCallParts(content) {
+
+  if (
+    !content ||
+    !Array.isArray(content.parts)
+  ) {
+
+    return [];
+
+  }
+
+
+  return content.parts.filter(
+    part =>
+      part &&
+      part.functionCall
+  );
+
+}
 
 
 // =====================================================
@@ -18,735 +827,410 @@ const { askRAG } = require("./ragService");
 
 async function runAgent(message) {
 
-  console.log("\n================================");
-  console.log("AI AGENT STARTED");
-  console.log("USER:", message);
-  console.log("================================");
+  console.log(
+    "\n=========================================="
+  );
 
-  try {
+  console.log(
+    "          GEMINI AGENT STARTED"
+  );
 
-    const { GoogleGenAI, Type } =
-      await import("@google/genai");
+  console.log(
+    "=========================================="
+  );
 
+  console.log(
+    "MODEL:",
+    MODEL
+  );
 
-    // =====================================================
-    // GEMINI CLIENT
-    // =====================================================
+  console.log(
+    "USER:",
+    message
+  );
 
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY
-    });
 
+  // ===================================================
+  // VALIDATION
+  // ===================================================
 
-    // =====================================================
-    // PRODUCT TOOLS
-    // =====================================================
+  validateConfig();
 
-    const tools = [
-      {
-        functionDeclarations: [
 
-          {
-            name: "getAllProducts",
+  if (
+    !message ||
+    typeof message !== "string" ||
+    !message.trim()
+  ) {
 
-            description:
-              "Get all actual products from MongoDB.",
+    throw new Error(
+      "Message is required."
+    );
 
-            parameters: {
-              type: Type.OBJECT,
-              properties: {}
-            }
-          },
+  }
 
 
-          {
-            name: "searchProducts",
+  // ===================================================
+  // CONVERSATION HISTORY
+  // ===================================================
+  //
+  // VERY IMPORTANT:
+  //
+  // We keep the COMPLETE model response.
+  //
+  // This means:
+  //
+  // functionCall
+  // +
+  // thoughtSignature
+  //
+  // are preserved.
+  //
+  // NEVER reconstruct the model functionCall.
+  //
+  // ===================================================
 
-            description:
-              "Search actual MongoDB products by product name or keyword.",
+  const contents = [
 
-            parameters: {
+    {
 
-              type: Type.OBJECT,
+      role: "user",
 
-              properties: {
+      parts: [
 
-                search: {
-                  type: Type.STRING,
-                  description:
-                    "Product name or keyword."
-                }
+        {
+          text:
+            message
+        }
 
-              },
+      ]
 
-              required: ["search"]
-            }
-          },
+    }
 
+  ];
 
-          {
-            name: "getCheapestProduct",
 
-            description:
-              "Find the actual product with the lowest price in MongoDB.",
+  // ===================================================
+  // TRACKING
+  // ===================================================
 
-            parameters: {
-              type: Type.OBJECT,
-              properties: {}
-            }
-          },
+  const toolCalls = [];
 
+  const sources = [];
 
-          {
-            name: "getMostExpensiveProduct",
 
-            description:
-              "Find the actual product with the highest price in MongoDB.",
+  // ===================================================
+  // AGENT LOOP
+  // ===================================================
 
-            parameters: {
-              type: Type.OBJECT,
-              properties: {}
-            }
-          },
+  for (
+    let step = 1;
+    step <= MAX_AGENT_STEPS;
+    step++
+  ) {
 
+    console.log(
+      `\n========== AGENT STEP ${step} ==========`
+    );
 
-          {
-            name: "getProductCount",
 
-            description:
-              "Get the total number of actual products stored in MongoDB.",
+    // =================================================
+    // CALL GEMINI
+    // =================================================
 
-            parameters: {
-              type: Type.OBJECT,
-              properties: {}
-            }
-          },
+    const data =
+      await callGemini(
+        contents
+      );
 
 
-          {
-            name: "createProduct",
+    // =================================================
+    // MODEL CONTENT
+    // =================================================
 
-            description:
-              "Create a new product in MongoDB.",
+    const modelContent =
+      getModelContent(
+        data
+      );
 
-            parameters: {
 
-              type: Type.OBJECT,
+    if (!modelContent) {
 
-              properties: {
+      throw new Error(
+        "Gemini returned no model content."
+      );
 
-                name: {
-                  type: Type.STRING
-                },
+    }
 
-                price: {
-                  type: Type.NUMBER
-                },
 
-                quantity: {
-                  type: Type.NUMBER
-                }
+    // =================================================
+    // FUNCTION CALLS
+    // =================================================
 
-              },
+    const functionCallParts =
+      getFunctionCallParts(
+        modelContent
+      );
 
-              required: [
-                "name",
-                "price",
-                "quantity"
-              ]
-            }
-          },
 
+    console.log(
+      "FUNCTION CALL COUNT:",
+      functionCallParts.length
+    );
 
-          {
-            name: "updateProduct",
 
-            description:
-              "Update an existing product in MongoDB.",
+    // =================================================
+    // NO FUNCTION CALL
+    // =================================================
 
-            parameters: {
+    if (
+      functionCallParts.length === 0
+    ) {
 
-              type: Type.OBJECT,
+      let answer = "";
 
-              properties: {
 
-                name: {
-                  type: Type.STRING
-                },
+      if (
+        Array.isArray(
+          modelContent.parts
+        )
+      ) {
 
-                price: {
-                  type: Type.NUMBER
-                },
+        answer =
+          modelContent.parts
+            .filter(
+              part =>
+                typeof part.text === "string"
+            )
+            .map(
+              part =>
+                part.text
+            )
+            .join("\n");
 
-                quantity: {
-                  type: Type.NUMBER
-                }
-
-              },
-
-              required: [
-                "name",
-                "price",
-                "quantity"
-              ]
-            }
-          },
-
-
-          {
-            name: "deleteProduct",
-
-            description:
-              "Delete an existing product from MongoDB.",
-
-            parameters: {
-
-              type: Type.OBJECT,
-
-              properties: {
-
-                name: {
-                  type: Type.STRING
-                }
-
-              },
-
-              required: ["name"]
-            }
-          }
-
-        ]
       }
-    ];
 
 
-    // =====================================================
-    // STEP 1
-    // CLASSIFY QUESTION
-    // =====================================================
+      console.log(
+        "\n=========================================="
+      );
 
-    console.log("\nClassifying question...");
+      console.log(
+        "             AGENT FINISHED"
+      );
 
-    const classificationPrompt = `
+      console.log(
+        "=========================================="
+      );
 
-Classify the user's question into exactly ONE category.
-
-Return ONLY:
-
-PRODUCT
-RAG
-GENERAL
-
----------------------------------------------------
-PRODUCT
----------------------------------------------------
-
-Use PRODUCT when the question is about actual
-products stored in MongoDB.
-
-Examples:
-
-What is the cheapest product?
-What is the most expensive product?
-What is the price of Mobile?
-How many products are there?
-Show all products
-Find laptop
-Search mobile
-Create a product
-Update a product
-Delete a product
-
----------------------------------------------------
-RAG
----------------------------------------------------
-
-Use RAG when the answer must come from the application's
-knowledge base.
-
-The knowledge base contains:
-
-- company information
-- company name
-- company history
-- company location
-- company services
-- company mission
-- founder
-- return policy
-
-Examples:
-
-What is the company name?
-Who is the founder?
-Where is the company located?
-What does the company do?
-What services does the company provide?
-What is the company mission?
-What is the return policy?
-Can I return a product?
-
----------------------------------------------------
-GENERAL
----------------------------------------------------
-
-Use GENERAL for general programming, technical,
-or common knowledge questions.
-
-Examples:
-
-What is Node.js?
-What is Angular?
-Explain MongoDB.
-What is Express?
-What is JavaScript?
-What is TypeScript?
-Explain REST API.
-What is Agentic AI?
-
----------------------------------------------------
-
-USER QUESTION:
-
-${message}
-
-Return ONLY ONE WORD.
-`;
+      console.log(
+        "ANSWER:",
+        answer
+      );
 
 
-    const classificationResponse =
-      await ai.models.generateContent({
+      return {
 
-        model: "gemini-3.6-flash",
+        success:
+          true,
 
-        contents: classificationPrompt
+        answer:
+          answer,
+
+        sources:
+          sources,
+
+        toolCalls:
+          toolCalls
+
+      };
+
+    }
+
+
+    // =================================================
+    // CRITICAL
+    // =================================================
+    //
+    // Push the COMPLETE model content.
+    //
+    // DO NOT DO:
+    //
+    // {
+    //   role: "model",
+    //   parts: [
+    //      {
+    //        functionCall: ...
+    //      }
+    //   ]
+    // }
+    //
+    // because that can remove the thoughtSignature.
+    //
+    // Gemini 3 requires the thought signature from
+    // the function-call part to be returned.
+    //
+    // =================================================
+
+    contents.push(
+      modelContent
+    );
+
+
+    // =================================================
+    // FUNCTION RESPONSES
+    // =================================================
+
+    const functionResponseParts = [];
+
+    for (const part of functionCallParts) {
+
+      const functionCall = part.functionCall;
+      const name = functionCall.name;
+      const args = functionCall.args || {};
+
+
+      console.log("\n--------------------------------");
+      console.log("TOOL SELECTED:", name);
+      console.log("ARGUMENTS:",args);
+      let result;
+      let success = true;
+
+      try {
+
+        result =
+          await executeTool(
+            name,
+            args
+          );
+
+
+      } catch (error) {
+
+        success = false;
+
+        console.error("TOOL ERROR:", error);
+
+        result = {
+          success:false,
+          error: error.message
+        };
+
+      }
+
+      toolCalls.push({
+        name: name,
+        arguments: args,
+        success: success
 
       });
 
 
-    const category =
-      (classificationResponse.text || "")
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z]/g, "");
+      // =================================================
+      // SOURCES
+      // =================================================
+
+      if (
+        name === "searchKnowledgeBase"
+      ) {
+
+        if (
+          result && Array.isArray(result.sources)
+        ) {
+
+          sources.push(...result.sources);
+
+        }
+
+      }
 
 
-    console.log(
-      "CLASSIFICATION:",
-      category
-    );
+      // =================================================
+      // FUNCTION RESPONSE
+      // =================================================
+      //
+      // IMPORTANT:
+      //
+      // Gemini REST expects:
+      //
+      // {
+      //   functionResponse: {
+      //     name: "...",
+      //     response: {
+      //       output: ...
+      //     }
+      //   }
+      // }
+      //
+      // NOT:
+      //
+      // response: [...]
+      //
+      // =================================================
 
-
-    // =====================================================
-    // STEP 2
-    // RAG
-    // =====================================================
-
-    if (category === "RAG") {
-
-      console.log("\nRAG QUESTION");
-
-      const ragResult =
-        await askRAG(message);
-
-      console.log(
-        "RAG RESULT:",
-        ragResult
-      );
-
-
-      return {
-
-        answer:
-          ragResult.answer || "",
-
-        sources:
-          ragResult.sources || []
-
-      };
-
+      function safeJson(value) {
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch {
+        return {
+          success: false,
+          error: "Tool returned a non-serializable result."
+        };
+      }
     }
 
 
-    // =====================================================
-    // STEP 3
-    // GENERAL
-    // =====================================================
-
-    if (category === "GENERAL") {
-
-      console.log(
-        "\nGENERAL QUESTION"
-      );
-
-
-      const generalResponse =
-        await ai.models.generateContent({
-
-          model: "gemini-3.6-flash",
-
-          contents: message,
-
-          config: {
-
-            systemInstruction: `
-
-You are a helpful AI assistant.
-
-Answer the user's general question using
-your normal knowledge.
-
-You can answer questions about:
-
-- Angular
-- Node.js
-- Express
-- MongoDB
-- JavaScript
-- TypeScript
-- REST API
-- Agentic AI
-- programming
-- software development
-- general technology
-
-Do NOT use MongoDB product data.
-
-Do NOT use the application's RAG knowledge base.
-
-Give a clear and useful answer.
-
-`
+      functionResponseParts.push({
+        functionResponse: {
+          name: name,
+          response: {
+           output: safeJson(result)
 
           }
-
-        });
-
-
-      return {
-
-        answer:
-          generalResponse.text || "",
-
-        sources: []
-
-      };
-
-    }
-
-
-    // =====================================================
-    // STEP 4
-    // PRODUCT
-    // =====================================================
-
-    console.log(
-      "\nPRODUCT QUESTION"
-    );
-
-
-    const productResponse =
-      await ai.models.generateContent({
-
-        model: "gemini-3.6-flash",
-
-        contents: message,
-
-        config: {
-
-          systemInstruction: `
-
-You are a Product Management AI agent.
-
-The application contains actual products
-stored in MongoDB.
-
-You MUST use a MongoDB product tool.
-
-Never invent product information.
-
-Examples:
-
-"What is the cheapest product?"
--> getCheapestProduct
-
-"What is the most expensive product?"
--> getMostExpensiveProduct
-
-"How many products?"
--> getProductCount
-
-"Show all products"
--> getAllProducts
-
-"Find laptop"
--> searchProducts
-
-"What is the price of Mobile?"
--> searchProducts
-
-"Search mobile"
--> searchProducts
-
-"Create iPhone price 80000 quantity 5"
--> createProduct
-
-"Update laptop price to 50000 quantity 10"
--> updateProduct
-
-"Delete iPhone"
--> deleteProduct
-
-`,
-
-          tools
 
         }
 
       });
 
+    }
 
-    const functionCalls =
-      productResponse.functionCalls || [];
+
+    // =================================================
+    // ADD FUNCTION RESPONSE
+    // =================================================
+
+    contents.push({
+
+      role: "user",
+
+      parts:
+        functionResponseParts
+
+    });
 
 
     console.log(
-      "PRODUCT FUNCTION CALLS:",
-      functionCalls.length
+      "FUNCTION RESPONSES ADDED TO HISTORY."
     );
-
-
-    // =====================================================
-    // NO TOOL
-    // =====================================================
-
-    if (functionCalls.length === 0) {
-
-      return {
-
-        answer:
-          "I could not determine the requested product operation.",
-
-        sources: []
-
-      };
-
-    }
-
-
-    // =====================================================
-    // EXECUTE PRODUCT TOOL
-    // =====================================================
-
-    const results = [];
-
-
-    for (const call of functionCalls) {
-
-      console.log(
-        "\n================================"
-      );
-
-      console.log(
-        "SELECTED TOOL:",
-        call.name
-      );
-
-      console.log(
-        "ARGUMENTS:",
-        call.args
-      );
-
-
-      let result;
-
-
-      switch (call.name) {
-
-        case "getAllProducts":
-
-          result =
-            await getAllProducts();
-
-          break;
-
-
-        case "searchProducts":
-
-          result =
-            await searchProducts(
-              call.args?.search
-            );
-
-          break;
-
-
-        case "getCheapestProduct":
-
-          result =
-            await getCheapestProduct();
-
-          break;
-
-
-        case "getMostExpensiveProduct":
-
-          result =
-            await getMostExpensiveProduct();
-
-          break;
-
-
-        case "getProductCount":
-
-          result =
-            await getProductCount();
-
-          break;
-
-
-        case "createProduct":
-
-          result =
-            await createProduct(
-              call.args?.name,
-              call.args?.price,
-              call.args?.quantity
-            );
-
-          break;
-
-
-        case "updateProduct":
-
-          result =
-            await updateProduct(
-              call.args?.name,
-              call.args?.price,
-              call.args?.quantity
-            );
-
-          break;
-
-
-        case "deleteProduct":
-
-          result =
-            await deleteProduct(
-              call.args?.name
-            );
-
-          break;
-
-
-        default:
-
-          result = {
-            error:
-              `Unknown tool: ${call.name}`
-          };
-
-      }
-
-
-      console.log(
-        "DATABASE RESULT:",
-        result
-      );
-
-
-      results.push({
-
-        tool:
-          call.name,
-
-        result
-
-      });
-
-    }
-
-
-    // =====================================================
-    // FINAL PRODUCT ANSWER
-    // =====================================================
-
-    const finalPrompt = `
-
-Answer the user's question using ONLY the
-MongoDB result below.
-
-USER QUESTION:
-
-${message}
-
-MONGODB RESULT:
-
-${JSON.stringify(
-  results,
-  null,
-  2
-)}
-
-Rules:
-
-1. Use ONLY the MongoDB result.
-2. Never invent product information.
-3. Do not mention internal tool names.
-4. Answer clearly and naturally.
-5. Mention product name when available.
-6. Mention price when available.
-7. Mention quantity when available.
-8. If no matching product exists, say that
-   the product was not found.
-
-`;
-
-
-    const finalResponse =
-      await ai.models.generateContent({
-
-        model: "gemini-3.6-flash",
-
-        contents: finalPrompt
-
-      });
-
-
-    return {
-
-      answer:
-        finalResponse.text || "",
-
-      sources: []
-
-    };
-
-
-  } catch (error) {
-
-    console.error(
-      "\n========== AGENT ERROR =========="
-    );
-
-    console.error(error);
-
-
-    if (
-      error?.status === 429 ||
-      error?.code === 429
-    ) {
-
-      throw new Error(
-        "Gemini API quota exceeded. Please try again later."
-      );
-
-    }
-
-
-    throw error;
 
   }
+
+
+  return {
+
+    success:
+      false,
+
+    answer:
+      "I could not complete the request within the maximum number of agent steps.",
+
+    sources:
+      sources,
+
+    toolCalls:
+      toolCalls
+
+  };
 
 }
 
