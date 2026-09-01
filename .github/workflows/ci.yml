@@ -32,3 +32,9 @@ jobs:
 
       - name: Build Angular application
         run: npm run build
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push'
+        run: npx angular-cli-ghpages --dir=dist/angular-frontend/browser
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
