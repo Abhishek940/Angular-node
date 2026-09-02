@@ -158,7 +158,7 @@ const crypto = require('crypto');
     }; 
 
  // login
-  const login = async (req, res) => {
+ /*  const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -180,19 +180,13 @@ const crypto = require('crypto');
             });
         } 
 
-         // CHECK ENVIRONMENT VARIABLES BEFORE jwt.sign()
-        console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-        console.log(
-            'JWT_REFRESH_SECRET exists:',
-            !!process.env.JWT_REFRESH_SECRET
-        );
+        console.log('EMAIL:', email);
+        console.log('USER FOUND:', !!user);
+        console.log('PASSWORD MATCH:', isMatch);
+        console.log('JWT_SECRET:', !!process.env.JWT_SECRET);
+        console.log('JWT_REFRESH_SECRET:', !!process.env.JWT_REFRESH_SECRET);
+        console.log('ROLE:', user.roleId);
 
-        if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
-            return res.status(500).json({
-                status: false,
-                msg: 'JWT environment variables are missing'
-            });
-        }
 
         // Generate jwt Access Token (expires in 5 minutes)
         const accessToken = jwt.sign(
@@ -223,8 +217,91 @@ const crypto = require('crypto');
         return res.status(500).json({ status: false, msg: 'Server error' });
     }
 };
-
+ */
    
+
+const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email })
+            .populate('roleId', 'name');
+
+        console.log('EMAIL:', email);
+        console.log('USER FOUND:', !!user);
+
+        if (!user) {
+            return res.status(400).json({
+                status: false,
+                msg: 'Invalid credentials'
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        console.log('PASSWORD MATCH:', isMatch);
+        console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+        console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
+        console.log('ROLE:', user.roleId);
+
+        if (!isMatch) {
+            return res.status(400).json({
+                status: false,
+                msg: 'Invalid credentials'
+            });
+        }
+
+        if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+            return res.status(500).json({
+                status: false,
+                msg: 'JWT environment variables are missing'
+            });
+        }
+
+        const accessToken = jwt.sign(
+            {
+                userId: user._id,
+                email: user.email,
+                roleId: user.roleId?._id
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        const refreshToken = jwt.sign(
+            {
+                userId: user._id,
+                email: user.email,
+                roleId: user.roleId?._id
+            },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: '30m' }
+        );
+
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        return res.status(200).json({
+            status: true,
+            msg: 'Login successful',
+            name: user.name,
+            Role: user.roleId?.name || null,
+            token: accessToken,
+            refreshToken: refreshToken
+        });
+
+    } catch (error) {
+        console.error('Error during login:', error);
+
+        return res.status(500).json({
+            status: false,
+            msg: error.message,
+            error: error.name
+        });
+    }
+};
+
+
   // forgot password
     
   const forgotPassword = async (req, res) => {
