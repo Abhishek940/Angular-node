@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
 })
 export class UserServiceService {
 
-  private apiUrl = 'http://localhost:3000/api';
+ // private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = 'https://angular-node-67cz.onrender.com/api';
 
   constructor(private http: HttpClient) {}
 
