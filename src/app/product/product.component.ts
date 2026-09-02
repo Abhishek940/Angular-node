@@ -140,7 +140,7 @@ ragSources: any[] = [];
   }
 
   getImageUrl(imagePath: string): string {
-    return `http://localhost:3000/${imagePath}`;
+    return `https://angular-node-67cz.onrender.com/${imagePath}`;
   }
   
   loadItems() {
