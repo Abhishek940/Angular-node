@@ -158,7 +158,7 @@ const crypto = require('crypto');
     }; 
 
  // login
- const login = async (req, res) => {
+  const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -178,7 +178,37 @@ const crypto = require('crypto');
                 status: false,
                 msg: 'Invalid credentials',
             });
-        }
+        } 
+
+      /*  const user = await User.findOne({ email });
+
+console.log('EMAIL:', email);
+console.log('USER:', user);
+console.log('PASSWORD HASH:', user?.password);
+
+if (!user) {
+  return res.status(400).json({
+    status: false,
+    msg: 'User not found'
+  });
+}
+
+const isMatch = await bcrypt.compare(password, user.password);
+
+console.log('PASSWORD MATCH:', isMatch);
+
+if (!isMatch) {
+  return res.status(400).json({
+    status: false,
+    msg: 'Password does not match'
+  });
+}
+
+return res.json({
+  status: true,
+  msg: 'Login successful'
+}); */
+     
 
         // Generate jwt Access Token (expires in 5 minutes)
         const accessToken = jwt.sign(
