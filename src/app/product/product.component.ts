@@ -107,7 +107,7 @@ ragSources: any[] = [];
         });
 
         // Set image src if the product already has an image
-        this.imageSrc = `http://localhost:3000/${res.data?.image}`;
+        this.imageSrc = `https://angular-node-67cz.onrender.com/${res.data?.image}`;
         this.setImageValidators();
       },
       error: (error) => {
