@@ -180,35 +180,19 @@ const crypto = require('crypto');
             });
         } 
 
-      /*  const user = await User.findOne({ email });
+         // CHECK ENVIRONMENT VARIABLES BEFORE jwt.sign()
+        console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+        console.log(
+            'JWT_REFRESH_SECRET exists:',
+            !!process.env.JWT_REFRESH_SECRET
+        );
 
-console.log('EMAIL:', email);
-console.log('USER:', user);
-console.log('PASSWORD HASH:', user?.password);
-
-if (!user) {
-  return res.status(400).json({
-    status: false,
-    msg: 'User not found'
-  });
-}
-
-const isMatch = await bcrypt.compare(password, user.password);
-
-console.log('PASSWORD MATCH:', isMatch);
-
-if (!isMatch) {
-  return res.status(400).json({
-    status: false,
-    msg: 'Password does not match'
-  });
-}
-
-return res.json({
-  status: true,
-  msg: 'Login successful'
-}); */
-     
+        if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+            return res.status(500).json({
+                status: false,
+                msg: 'JWT environment variables are missing'
+            });
+        }
 
         // Generate jwt Access Token (expires in 5 minutes)
         const accessToken = jwt.sign(
