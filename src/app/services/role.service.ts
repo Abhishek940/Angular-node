@@ -13,8 +13,7 @@ export class RoleService {
 
   // Create 
   addOrUpdateRole(role: any): Observable<any> {
-    console.log(role);
-    return this.http.post(`${this.apiUrl}/addRole`, role);
+     return this.http.post(`${this.apiUrl}/addRole`, role);
   }
 
   // get all role

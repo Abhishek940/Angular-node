@@ -21,7 +21,7 @@ export interface RagSource {
 
 export class AiService {
 
-  private apiUrl = 'http://localhost:3000/api/ai';
+  private apiUrl = 'https://angular-node-67cz.onrender.com/api/ai';
   constructor(private http: HttpClient) {}
 
  askAI(message: string): Observable<AiResponse> {
