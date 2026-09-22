@@ -1,0 +1,18 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'angular',
+                    url: 'https://github.com/Abhishek940/Angular-node.git'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Jenkins pipeline is working!'
+            }
+        }
+    }
+}
