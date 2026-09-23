@@ -29,9 +29,15 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
+                    // Prevent network timeout issues during npm install
+                    bat 'npm config set fetch-retry-mintimeout 20000'
+                    bat 'npm config set fetch-retries 5'
                     bat 'npm install'
                 }
                 dir('backend') {
+                    // Prevent network timeout issues during npm install
+                    bat 'npm config set fetch-retry-mintimeout 20000'
+                    bat 'npm config set fetch-retries 5'
                     bat 'npm install'
                 }
             }
