@@ -1,17 +1,66 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS' 
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'angular',
-                    url: 'https://github.com/Abhishek940/Angular-node.git'
+                // 1. Checkout Angular branch into 'frontend' directory
+                dir('frontend') {
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/angular']],
+                        userRemoteConfigs: [[url: 'https://github.com/Abhishek940/Angular-node.git']]
+                    ])
+                }
+                
+                // 2. Checkout Node branch into 'backend' directory
+                dir('backend') {
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/node']],
+                        userRemoteConfigs: [[url: 'https://github.com/Abhishek940/Angular-node.git']]
+                    ])
+                }
             }
         }
 
-        stage('Test') {
+        stage('Install Dependencies') {
             steps {
-                echo 'Jenkins pipeline is working!'
+                dir('frontend') {
+                    sh 'npm install'
+                }
+                dir('backend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir('frontend') {
+                    // Generates the  build
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Archive Build Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'frontend/dist/**, backend/**, !backend/node_modules/**', fingerprint: true
+            }
+        }
+
+        stage('Run Locally on Jenkins Server') {
+            steps {
+                // Example: Start Node.js backend in the background or run a test script
+                dir('backend') {
+                    // Using nohup so the process doesn't get killed immediately when Jenkins finishes the job (for testing)
+                    // Make sure to replace 'server.js' with your actual backend entry point file name
+                    sh 'nohup node server.js > app.log 2>&1 &'
+                }
+                echo 'Node backend has been started locally on the server!'
             }
         }
     }
