@@ -1,9 +1,7 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'NodeJS' 
-    }
+    // Removed the isolated 'nodejs' tool block so it uses your machine's system Node/npm
 
     stages {
         stage('Checkout Code') {
@@ -29,13 +27,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    // Prevent network timeout issues during npm install
                     bat 'npm config set fetch-retry-mintimeout 20000'
                     bat 'npm config set fetch-retries 5'
                     bat 'npm install'
                 }
                 dir('backend') {
-                    // Prevent network timeout issues during npm install
                     bat 'npm config set fetch-retry-mintimeout 20000'
                     bat 'npm config set fetch-retries 5'
                     bat 'npm install'
@@ -46,7 +42,6 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    // Generates the build
                     bat 'npm run build'
                 }
             }
@@ -61,7 +56,6 @@ pipeline {
         stage('Run Locally on Jenkins Server') {
             steps {
                 dir('backend') {
-                    // Windows command to start node in background
                     bat 'start /b node server.js > app.log 2>&1'
                 }
                 echo 'Node backend has been started locally on the server!'
