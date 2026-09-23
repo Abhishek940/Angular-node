@@ -29,10 +29,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
                 dir('backend') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -40,8 +40,8 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
-                    // Generates the  build
-                    sh 'npm run build'
+                    // Generates the build
+                    bat 'npm run build'
                 }
             }
         }
@@ -54,11 +54,9 @@ pipeline {
 
         stage('Run Locally on Jenkins Server') {
             steps {
-                // Example: Start Node.js backend in the background or run a test script
                 dir('backend') {
-                    // Using nohup so the process doesn't get killed immediately when Jenkins finishes the job (for testing)
-                    // Make sure to replace 'server.js' with your actual backend entry point file name
-                    sh 'nohup node server.js > app.log 2>&1 &'
+                    // Windows command to start node in background
+                    bat 'start /b node server.js > app.log 2>&1'
                 }
                 echo 'Node backend has been started locally on the server!'
             }
