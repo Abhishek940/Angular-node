@@ -27,11 +27,13 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
+                    bat 'npm config set cache C:\\JenkinsCache --global'
                     bat 'npm config set fetch-retry-mintimeout 20000'
                     bat 'npm config set fetch-retries 5'
                     bat 'npm install'
                 }
                 dir('backend') {
+                    bat 'npm config set cache C:\\JenkinsCache --global'
                     bat 'npm config set fetch-retry-mintimeout 20000'
                     bat 'npm config set fetch-retries 5'
                     bat 'npm install'
