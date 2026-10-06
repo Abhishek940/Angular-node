@@ -107,7 +107,7 @@ ragSources: any[] = [];
         });
 
         // Set image src if the product already has an image
-        this.imageSrc = `https://angular-node-67cz.onrender.com/${res.data?.image}`;
+        this.imageSrc = `https://localhost:3000/${res.data?.image}`;
         this.setImageValidators();
       },
       error: (error) => {
@@ -140,7 +140,7 @@ ragSources: any[] = [];
   }
 
   getImageUrl(imagePath: string): string {
-    return `https://angular-node-67cz.onrender.com/${imagePath}`;
+    return `https://localhost:3000/${imagePath}`;
   }
   
   loadItems() {
